@@ -1,5 +1,7 @@
 "use client";
 
+import Footer from "@/src/components/core/Footer";
+import NavBar from "@/src/components/core/NavBar";
 import { MessageSquare, Landmark, Megaphone, PartyPopper, ChevronRight } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────
@@ -92,11 +94,11 @@ function SectionLabel({
 }
 
 // ── Main Component ─────────────────────────────────────
-export default function CRMSection() {
+function CRMMainSection() {
   const pendingCount = dueEntries.filter((e) => e.status === "OVERDUE" || e.status === "PENDING").length;
 
   return (
-    <div className="min-h-screen bg-[#1C0F0A] px-6 md:px-12 lg:px-16 pt-12 pb-24">
+    <div className="min-h-screen bg-[#FFF8F7] px-6 md:px-12 lg:px-16 pt-12 pb-24">
 
       {/* ── Page Header ── */}
       <div className="mb-10">
@@ -131,7 +133,7 @@ export default function CRMSection() {
           />
 
           {/* Broadcast Campaign Card */}
-          <div className="bg-[#FAF6F1] rounded-xl px-6 py-6">
+          <div className="bg-[#FFFFFF] border-l-4 border-[#6B1A1A] px-6 py-6">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p
@@ -163,7 +165,7 @@ export default function CRMSection() {
           </div>
 
           {/* Automated Greetings Card */}
-          <div className="bg-[#FAF6F1] rounded-xl px-5 py-5 flex items-center gap-4 cursor-pointer hover:bg-[#F5EDE4] transition-colors duration-200 group">
+          <div className="bg-[#FFF0F1] rounded-xl px-5 py-5 flex items-center gap-4 cursor-pointer hover:bg-[#F5EDE4] transition-colors duration-200 group">
             {/* Icon box */}
             <div
               className="w-[52px] h-[52px] rounded-xl flex items-center justify-center flex-shrink-0"
@@ -214,11 +216,11 @@ export default function CRMSection() {
           </div>
 
           {/* Table Card */}
-          <div className="bg-[#FAF6F1] rounded-xl overflow-hidden">
+          <div className="bg-[#FFFFFF] rounded-xl overflow-hidden">
 
             {/* Table Header */}
             <div
-              className="grid px-7 py-4 border-b border-[#E8DDD4]"
+              className="grid px-7 bg-[#F9EAEB] py-4 border-b border-[#E8DDD4]"
               style={{ gridTemplateColumns: "1.6fr 1.4fr 1fr 100px" }}
             >
               {["Client Name", "Item Details", "Balance", "Status"].map((h) => (
@@ -295,4 +297,14 @@ export default function CRMSection() {
       </div>
     </div>
   );
+}
+
+export default function CRMSection(){
+  return (
+    <main>
+      <NavBar />
+      <CRMMainSection />
+      <Footer />
+    </main>
+  )
 }

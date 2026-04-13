@@ -6,6 +6,7 @@ import LocationSection from "../components/home/Location";
 import Footer from "../components/core/Footer";
 import LoginPage from "../components/authentication/LogIn";
 import AddStaffModal from "../components/authentication/AddStaff";
+import CreateProductForm from "../components/products/CreateProduct";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       <LocationSection />
       {/* <LoginPage /> */}
       {/* <AddStaffModal /> */}
+      <CreateProductForm />
       <Footer />
     </main>
   );

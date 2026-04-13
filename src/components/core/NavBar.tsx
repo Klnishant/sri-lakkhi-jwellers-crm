@@ -22,7 +22,7 @@ export default function NavBar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   return (
-    <nav className="w-full bg-[#FAF6F1] border-b border-[#E8DDD4] shadow-sm">
+    <nav className="w-full bg-[#FFF8F7] border-b border-[#E8DDD4] shadow-sm">
       <div className="max-w-screen-xl mx-auto px-6 h-[90px] flex items-center justify-between relative">
         
         {/* Logo */}

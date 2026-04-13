@@ -2,24 +2,76 @@
 
 import { useState } from "react";
 import { CircleUserRound, Lock, Eye, EyeOff } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signInSchema } from "@/src/schemas/signInSchema";
+import * as z from "zod";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/src/components/ui/use-toast";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSignIn = () => {
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleSignIn = async () => {
     // handle auth logic here
+    try {
+      if (!email || !password) {
+        toast({
+          title: "Missing fields",
+          description: "Please fill in all fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+
+      const response = await signIn("credentials", {
+        redirect: false,
+        identifier: email,
+        password: password,
+      });
+
+      if (response?.error) {
+        if (response.error === "credentialsSignIn") {
+          toast({
+            title: "Login failed",
+            description: "invalid username or password",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: response?.error,
+            variant: "destructive",
+          });
+        }
+      }
+
+      if (response?.url) {
+        router.replace("/crm");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error occured while log in",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="min-h-screen flex">
-
       {/* ── Left Panel: Brand / Image ── */}
       <div
         className="hidden lg:flex flex-col justify-between w-[58%] relative overflow-hidden px-14 py-14"
         style={{
-          background: "radial-gradient(ellipse at 60% 40%, #2A1A4A 0%, #150D2E 40%, #0D0820 100%)",
+          background:
+            "radial-gradient(ellipse at 60% 40%, #2A1A4A 0%, #150D2E 40%, #0D0820 100%)",
         }}
       >
         {/* Subtle dark circle overlays (decorative depth) */}
@@ -93,7 +145,8 @@ export default function LoginPage() {
                 fontWeight: 400,
               }}
             >
-              SAFE &nbsp; SEE &nbsp; WORK &nbsp;&nbsp;&nbsp; SAFE &nbsp; SEE &nbsp; WORK &nbsp;&nbsp;&nbsp; SAFE &nbsp; SEE &nbsp; WORK
+              SAFE &nbsp; SEE &nbsp; WORK &nbsp;&nbsp;&nbsp; SAFE &nbsp; SEE
+              &nbsp; WORK &nbsp;&nbsp;&nbsp; SAFE &nbsp; SEE &nbsp; WORK
             </p>
           </div>
         </div>
@@ -109,13 +162,11 @@ export default function LoginPage() {
 
       {/* ── Right Panel: Login Form ── */}
       <div className="flex-1 bg-[#FAF6F1] flex flex-col justify-between px-8 md:px-16 lg:px-20 py-14">
-
         {/* Spacer top */}
         <div />
 
         {/* Form block */}
         <div className="w-full max-w-[360px] mx-auto">
-
           {/* Heading */}
           <h1
             className="text-[#6B1A1A] text-center mb-2"
@@ -152,7 +203,11 @@ export default function LoginPage() {
               Username / Email
             </label>
             <div className="flex items-center gap-3 bg-white border border-[#DDD0C4] rounded-md px-4 py-3 focus-within:border-[#8B6914] transition-colors duration-200">
-              <CircleUserRound size={17} strokeWidth={1.6} className="text-[#B8A898] flex-shrink-0" />
+              <CircleUserRound
+                size={17}
+                strokeWidth={1.6}
+                className="text-[#B8A898] flex-shrink-0"
+              />
               <input
                 type="email"
                 placeholder="name@lakhhi.com"
@@ -191,7 +246,11 @@ export default function LoginPage() {
               </button>
             </div>
             <div className="flex items-center gap-3 bg-white border border-[#DDD0C4] rounded-md px-4 py-3 focus-within:border-[#8B6914] transition-colors duration-200">
-              <Lock size={16} strokeWidth={1.6} className="text-[#B8A898] flex-shrink-0" />
+              <Lock
+                size={16}
+                strokeWidth={1.6}
+                className="text-[#B8A898] flex-shrink-0"
+              />
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
@@ -244,12 +303,20 @@ export default function LoginPage() {
       {/* ── Marquee animation styles ── */}
       <style jsx>{`
         @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
         }
         @keyframes marquee-slow {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
         }
         .animate-marquee {
           display: inline-block;

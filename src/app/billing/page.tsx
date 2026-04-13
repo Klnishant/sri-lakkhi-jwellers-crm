@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Trash2, Plus, Printer, Save } from "lucide-react";
+import NavBar from "@/src/components/core/NavBar";
+import Footer from "@/src/components/core/Footer";
 
 // ── Types ──────────────────────────────────────────────
 type LineItem = {
@@ -19,8 +21,7 @@ type ClientInfo = {
 };
 
 // ── Helpers ────────────────────────────────────────────
-const fmt = (n: number) =>
-  "₹" + n.toLocaleString("en-IN");
+const fmt = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 const TAX_RATE = 0.02; // 2% insurance & tax
 
@@ -44,7 +45,11 @@ function FormInput({
     <div className={`flex flex-col gap-1 ${className}`}>
       <label
         className="text-[#9E8A7E] tracking-[0.08em] uppercase"
-        style={{ fontFamily: "'Georgia', serif", fontSize: "10px", fontWeight: 600 }}
+        style={{
+          fontFamily: "'Georgia', serif",
+          fontSize: "10px",
+          fontWeight: 600,
+        }}
       >
         {label}
       </label>
@@ -61,7 +66,7 @@ function FormInput({
 }
 
 // ── Main Component ─────────────────────────────────────
-export default function BillingSection() {
+function BillingMainSection() {
   const [client, setClient] = useState<ClientInfo>({
     fullName: "Eleanor Fitzgerald",
     email: "eleanor.f@heritage.com",
@@ -109,13 +114,11 @@ export default function BillingSection() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1C0F0A] px-6 md:px-12 lg:px-16 pt-12 pb-20 flex flex-col lg:flex-row gap-10">
-
+    <div className="min-h-screen bg-[#FFF8F7] px-6 md:px-12 lg:px-16 pt-12 pb-20 flex flex-col lg:flex-row gap-10">
       {/* ══════════════════════════════════════════
           LEFT PANEL — Form
       ══════════════════════════════════════════ */}
       <div className="w-full lg:w-[420px] flex-shrink-0 flex flex-col gap-8">
-
         {/* Header */}
         <div>
           <h1
@@ -141,7 +144,11 @@ export default function BillingSection() {
         <div>
           <p
             className="text-[#8B6914] tracking-[0.15em] uppercase mb-5"
-            style={{ fontFamily: "'Georgia', serif", fontSize: "11px", fontWeight: 600 }}
+            style={{
+              fontFamily: "'Georgia', serif",
+              fontSize: "11px",
+              fontWeight: 600,
+            }}
           >
             Client Information
           </p>
@@ -177,14 +184,22 @@ export default function BillingSection() {
           <div className="flex items-center justify-between mb-4">
             <p
               className="text-[#8B6914] tracking-[0.15em] uppercase"
-              style={{ fontFamily: "'Georgia', serif", fontSize: "11px", fontWeight: 600 }}
+              style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "11px",
+                fontWeight: 600,
+              }}
             >
               Inventory Selection
             </p>
             <button
               onClick={addItem}
-              className="flex items-center gap-1 text-[#8B6914] hover:text-[#C9A84C] transition-colors duration-200"
-              style={{ fontFamily: "'Georgia', serif", fontSize: "12px", fontWeight: 600 }}
+              className="flex items-center gap-1 text-[#3C000D] hover:text-[#C9A84C] transition-colors duration-200"
+              style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "12px",
+                fontWeight: 600,
+              }}
             >
               <Plus size={13} strokeWidth={2.5} />
               Add New Item
@@ -195,12 +210,16 @@ export default function BillingSection() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="bg-[#FAF6F1] rounded-md px-5 py-4 flex items-start justify-between"
+                className="bg-[#FFF0F1] rounded-md px-5 py-4 flex items-start justify-between"
               >
                 <div>
                   <p
                     className="text-[#2C1A0E] mb-1"
-                    style={{ fontFamily: "'Georgia', serif", fontSize: "15px", fontWeight: 600 }}
+                    style={{
+                      fontFamily: "'Georgia', serif",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                    }}
                   >
                     {item.name}
                   </p>
@@ -214,7 +233,11 @@ export default function BillingSection() {
                 <div className="flex flex-col items-end gap-2">
                   <span
                     className="text-[#2C1A0E]"
-                    style={{ fontFamily: "'Georgia', serif", fontSize: "15px", fontWeight: 600 }}
+                    style={{
+                      fontFamily: "'Georgia', serif",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                    }}
                   >
                     {fmt(item.rate)}
                   </span>
@@ -234,13 +257,21 @@ export default function BillingSection() {
         <div className="flex gap-3 mt-2">
           <button
             className="flex-1 bg-[#6B1A1A] hover:bg-[#521414] text-white py-4 rounded-md tracking-[0.06em] transition-colors duration-200"
-            style={{ fontFamily: "'Georgia', serif", fontSize: "14px", fontWeight: 500 }}
+            style={{
+              fontFamily: "'Georgia', serif",
+              fontSize: "14px",
+              fontWeight: 500,
+            }}
           >
             Finalize Bill
           </button>
           <button
             className="flex items-center gap-2 border border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C]/10 px-7 py-4 rounded-md tracking-[0.06em] transition-colors duration-200"
-            style={{ fontFamily: "'Georgia', serif", fontSize: "14px", fontWeight: 500 }}
+            style={{
+              fontFamily: "'Georgia', serif",
+              fontSize: "14px",
+              fontWeight: 500,
+            }}
           >
             <Save size={15} strokeWidth={1.8} />
             Draft
@@ -252,18 +283,25 @@ export default function BillingSection() {
           RIGHT PANEL — Live Preview
       ══════════════════════════════════════════ */}
       <div className="flex-1 flex flex-col gap-4">
-
         {/* Preview top bar */}
         <div className="flex items-center justify-between px-1">
           <p
             className="text-[#9E8A7E] tracking-[0.15em] uppercase"
-            style={{ fontFamily: "'Georgia', serif", fontSize: "11px", fontWeight: 600 }}
+            style={{
+              fontFamily: "'Georgia', serif",
+              fontSize: "11px",
+              fontWeight: 600,
+            }}
           >
             Live Preview
           </p>
           <button
             className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] px-5 py-2.5 rounded-md tracking-[0.06em] transition-colors duration-200"
-            style={{ fontFamily: "'Georgia', serif", fontSize: "13px", fontWeight: 600 }}
+            style={{
+              fontFamily: "'Georgia', serif",
+              fontSize: "13px",
+              fontWeight: 600,
+            }}
           >
             <Printer size={15} strokeWidth={2} />
             Print PDF
@@ -272,7 +310,6 @@ export default function BillingSection() {
 
         {/* Invoice Card */}
         <div className="bg-white rounded-xl shadow-xl px-10 py-10 flex flex-col gap-8 flex-1">
-
           {/* Invoice Header */}
           <div className="flex items-start justify-between">
             <div>
@@ -312,13 +349,21 @@ export default function BillingSection() {
             <div>
               <p
                 className="text-[#9E8A7E] uppercase tracking-[0.1em] mb-2"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "10px", fontWeight: 600 }}
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "10px",
+                  fontWeight: 600,
+                }}
               >
                 Bill To:
               </p>
               <p
                 className="text-[#2C1A0E] mb-1"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "18px", fontWeight: 600 }}
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "18px",
+                  fontWeight: 600,
+                }}
               >
                 {client.fullName}
               </p>
@@ -332,19 +377,31 @@ export default function BillingSection() {
             <div className="text-right">
               <p
                 className="text-[#9E8A7E] uppercase tracking-[0.1em] mb-3"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "10px", fontWeight: 600 }}
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "10px",
+                  fontWeight: 600,
+                }}
               >
                 Date / No:
               </p>
               <p
                 className="text-[#2C1A0E] mb-1"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "14px", fontWeight: 600 }}
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                }}
               >
                 {invoiceDate}
               </p>
               <p
                 className="text-[#8B6914]"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "13px", fontWeight: 500 }}
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                }}
               >
                 {invoiceNo}
               </p>
@@ -362,7 +419,11 @@ export default function BillingSection() {
                 <p
                   key={h}
                   className={`text-[#9E8A7E] tracking-[0.12em] uppercase ${h !== "Description" ? "text-right" : ""}`}
-                  style={{ fontFamily: "'Georgia', serif", fontSize: "10px", fontWeight: 600 }}
+                  style={{
+                    fontFamily: "'Georgia', serif",
+                    fontSize: "10px",
+                    fontWeight: 600,
+                  }}
                 >
                   {h}
                 </p>
@@ -379,7 +440,11 @@ export default function BillingSection() {
                 <div>
                   <p
                     className="text-[#4A1A1A] mb-1"
-                    style={{ fontFamily: "'Georgia', serif", fontSize: "14px", fontWeight: 700 }}
+                    style={{
+                      fontFamily: "'Georgia', serif",
+                      fontSize: "14px",
+                      fontWeight: 700,
+                    }}
                   >
                     {item.name}
                   </p>
@@ -404,7 +469,11 @@ export default function BillingSection() {
                 </p>
                 <p
                   className="text-[#2C1A0E] text-right"
-                  style={{ fontFamily: "'Georgia', serif", fontSize: "13px", fontWeight: 600 }}
+                  style={{
+                    fontFamily: "'Georgia', serif",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                  }}
                 >
                   {fmt(item.rate)}
                 </p>
@@ -445,13 +514,21 @@ export default function BillingSection() {
             <div className="flex justify-between w-full max-w-[280px] mt-2 items-baseline">
               <p
                 className="text-[#2C1A0E] uppercase tracking-[0.12em]"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "11px", fontWeight: 700 }}
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                }}
               >
                 Total Amount
               </p>
               <p
                 className="text-[#4A1A1A]"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "clamp(20px, 2vw, 26px)", fontWeight: 700 }}
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "clamp(20px, 2vw, 26px)",
+                  fontWeight: 700,
+                }}
               >
                 {fmt(total)}
               </p>
@@ -463,7 +540,11 @@ export default function BillingSection() {
             <div className="max-w-[300px]">
               <p
                 className="text-[#5C4A3A] mb-2"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "12px", fontWeight: 600 }}
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                }}
               >
                 Term and Condition
               </p>
@@ -491,15 +572,28 @@ export default function BillingSection() {
               </p>
               <p
                 className="text-[#9E8A7E] tracking-[0.12em] uppercase"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "9px", fontWeight: 600 }}
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "9px",
+                  fontWeight: 600,
+                }}
               >
                 Authorized Signatory
               </p>
             </div>
           </div>
-
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <main>
+      <NavBar />
+      <BillingMainSection />
+      <Footer />
+    </main>
   );
 }

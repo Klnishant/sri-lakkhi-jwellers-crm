@@ -13,6 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import NavBar from "@/src/components/core/NavBar";
+import Footer from "@/src/components/core/Footer";
 
 // ── Types ──────────────────────────────────────────────
 type Purity = "22k Gold" | "18k Gold" | "24k Gold";
@@ -121,7 +123,7 @@ function SelectDropdown({
 }
 
 // ── Main Component ─────────────────────────────────────
-export default function InventorySection() {
+function MainSection() {
   const [search, setSearch] = useState("");
   const [purity, setPurity] = useState("All Purity");
   const [type, setType] = useState("All Types");
@@ -378,4 +380,14 @@ export default function InventorySection() {
       </div>
     </div>
   );
+}
+
+export default function InventorySection() {
+    return (
+        <main>
+            <NavBar />
+            <MainSection />
+            <Footer />
+        </main>
+    )
 }

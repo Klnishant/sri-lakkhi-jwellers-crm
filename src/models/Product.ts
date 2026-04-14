@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, ObjectId, Schema } from "mongoose";
 
 export interface IProduct extends Document {
     name: string;
@@ -11,6 +11,7 @@ export interface IProduct extends Document {
     makingCharge: number;
     huid: string;
     hsn: number;
+    supplier: ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -27,6 +28,7 @@ const ProductSchema: Schema = new Schema<IProduct>(
         makingCharge: { type: Number },
         huid: { type: String },
         hsn: { type: Number },
+        supplier: { type: Schema.Types.ObjectId, ref: "Suplier" },
     },
     { timestamps: true }
 );

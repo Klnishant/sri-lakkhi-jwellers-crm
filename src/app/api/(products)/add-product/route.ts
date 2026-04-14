@@ -25,7 +25,7 @@ export async function POST(req: Request) {
         const savedProduct = await product.save();
 
         if(savedProduct){
-            return new Response(JSON.stringify({success:true,message:"Product added successfully."}),{status:201})
+            return new Response(JSON.stringify({success:true,savedProduct,message:"Product added successfully."}),{status:201})
         } else {
             return new Response(JSON.stringify({success:false,message:"Failed to add product."}),{status:500})
         }

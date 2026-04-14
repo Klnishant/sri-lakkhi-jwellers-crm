@@ -15,9 +15,14 @@ type LineItem = {
 };
 
 type ClientInfo = {
-  fullName: string;
+  name: string;
+  adress: string;
+  phone: string;
   email: string;
   contact: string;
+  dueAmount: number;
+  dob: Date;
+  anniversary: Date;
 };
 
 // ── Helpers ────────────────────────────────────────────
@@ -68,9 +73,14 @@ function FormInput({
 // ── Main Component ─────────────────────────────────────
 function BillingMainSection() {
   const [client, setClient] = useState<ClientInfo>({
-    fullName: "Eleanor Fitzgerald",
-    email: "eleanor.f@heritage.com",
-    contact: "+44 7700 900077",
+    name: "Eleanor Fitzgerald",
+    adress: "south mumbai, india",
+    phone: "+91 7700 900077",
+    email: "eleanor@example.com",
+    contact: "+91 7700 900077",
+    dueAmount: 0,
+    dob: new Date("2000-01-01"),
+    anniversary: new Date("2000-01-01"),
   });
 
   const [items, setItems] = useState<LineItem[]>([
@@ -150,22 +160,22 @@ function BillingMainSection() {
               fontWeight: 600,
             }}
           >
-            Client Information
+            Customer Information
           </p>
 
           <div className="flex flex-col gap-6">
             <FormInput
               label="Full Name"
               placeholder="Full Name"
-              value={client.fullName}
-              onChange={(v) => setClient((c) => ({ ...c, fullName: v }))}
+              value={client.name}
+              onChange={(v) => setClient((c) => ({ ...c, name: v }))}
             />
             <div className="flex gap-4">
               <FormInput
-                label="Email Address"
-                placeholder="email@domain.com"
-                value={client.email}
-                onChange={(v) => setClient((c) => ({ ...c, email: v }))}
+                label="Address"
+                placeholder="Enter Address"
+                value={client.adress}
+                onChange={(v) => setClient((c) => ({ ...c, adress: v }))}
                 className="flex-1"
               />
               <FormInput
@@ -175,6 +185,24 @@ function BillingMainSection() {
                 onChange={(v) => setClient((c) => ({ ...c, contact: v }))}
                 className="flex-1"
               />
+            </div>
+            <div className="flex gap-4">
+              <FormInput
+                label="Birth Date"
+                placeholder="Enter your birthday"
+                value={client.dob.toISOString().split("T")[0]}
+                onChange={(v) => setClient((c) => ({ ...c, dob: new Date(v) }))}
+                type="Date"
+                className="flex-1"
+               />
+               <FormInput
+                label="Marriage Date"
+                placeholder="Enter your marriage date"
+                value={client.anniversary.toISOString().split("T")[0]}
+                onChange={(v) => setClient((c) => ({ ...c, dob: new Date(v) }))}
+                type="Date"
+                className="flex-1"
+               />
             </div>
           </div>
         </div>
@@ -365,7 +393,7 @@ function BillingMainSection() {
                   fontWeight: 600,
                 }}
               >
-                {client.fullName}
+                {client.name}
               </p>
               <p
                 className="text-[#9E8A7E]"

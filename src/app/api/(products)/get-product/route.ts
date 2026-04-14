@@ -3,13 +3,53 @@ import ProductModel from "@/src/models/Product";
 
 export async function GET(req: Request) {
     await dbconnect();
-    
+
     try {
-        const products = await ProductModel.find();
+        const { searchParams } = new URL(req.url);
 
-        return new Response(JSON.stringify({ success: true, products }), { status: 200 });
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "10");
+        const search = searchParams.get("search") || "";
+
+        const skip = (page - 1) * limit;
+
+        // 🔍 Search condition (name OR huid)
+        const query = search
+            ? {
+                  $or: [
+                      { name: { $regex: search, $options: "i" } },
+                      { huid: { $regex: search, $options: "i" } },
+                  ],
+              }
+            : {};
+
+        const totalProducts = await ProductModel.countDocuments(query);
+
+        const products = await ProductModel.find(query)
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 });
+
+        return new Response(
+            JSON.stringify({
+                success: true,
+                products,
+                pagination: {
+                    totalProducts,
+                    currentPage: page,
+                    totalPages: Math.ceil(totalProducts / limit),
+                    pageSize: limit,
+                },
+            }),
+            { status: 200 }
+        );
     } catch (error) {
-        return new Response(JSON.stringify({ success: false, message: "An error occurred while fetching products." }), { status: 500 });
-
+        return new Response(
+            JSON.stringify({
+                success: false,
+                message: "Error fetching products",
+            }),
+            { status: 500 }
+        );
     }
 }

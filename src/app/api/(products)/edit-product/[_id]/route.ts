@@ -28,7 +28,7 @@ export async function PATCH(req: Request, { params }: { params: { _id: string } 
         const updatedProduct = await product.save();
 
         if (updatedProduct) {
-            return new Response(JSON.stringify({ success: true, message: "Product updated successfully." }), { status: 200 });
+            return new Response(JSON.stringify({ success: true, updatedProduct, message: "Product updated successfully." }), { status: 200 });
         } else {
             return new Response(JSON.stringify({ success: false, message: "Failed to update product." }), { status: 500 });
         }

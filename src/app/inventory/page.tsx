@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   ChevronDown,
@@ -15,6 +15,15 @@ import {
 } from "lucide-react";
 import NavBar from "@/src/components/core/NavBar";
 import Footer from "@/src/components/core/Footer";
+import { useDebounceCallback } from "usehooks-ts";
+import { set } from "mongoose";
+import { IProduct } from "@/src/models/Product";
+import axios from "axios";
+import CreateProductModal from "@/src/components/products/CreateProduct";
+import EditProductModal from "@/src/components/products/EditProduct";
+import DeleteProductAlert from "@/src/components/ui/DeleteProductAlert";
+import { id } from "zod/locales";
+import Pagination from "@/src/components/ui/Pagination";
 
 // ── Types ──────────────────────────────────────────────
 type Purity = "22k Gold" | "18k Gold" | "24k Gold";
@@ -69,8 +78,8 @@ const mockItems: InventoryItem[] = [
   },
 ];
 
-const PURITY_OPTIONS = ["All Purity", "22k Gold", "18k Gold", "24k Gold"];
-const TYPE_OPTIONS = ["All Types", "Necklace", "Ring", "Bangles", "Earrings", "Bracelet"];
+const PURITY_OPTIONS = ["All Purity", "22k", "18k", "24k", "Other"];
+const TYPE_OPTIONS = ["All Types", "Gold", "Silver", "Other"];
 
 // ── Purity Badge ───────────────────────────────────────
 function PurityBadge({ label }: { label: string }) {
@@ -124,12 +133,88 @@ function SelectDropdown({
 
 // ── Main Component ─────────────────────────────────────
 function MainSection() {
+  const [products, setProducts] = useState<IProduct[] | null>(null);
   const [search, setSearch] = useState("");
   const [purity, setPurity] = useState("All Purity");
   const [type, setType] = useState("All Types");
   const [currentPage, setCurrentPage] = useState(1);
-  const totalItems = 128;
-  const totalPages = 3;
+  const [limit, setLimit] = useState(10);
+  const [loading,setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [addProductOpen, setAddProductOpen] = useState(false);
+  const [editProductOpen, setEditProductOpen] = useState(false);
+  const [selectEditProduct, setSelectEditProduct] = useState<IProduct | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const debouncedSearch = useDebounceCallback(setSearch, 300);
+
+  useEffect(()=>{
+    const fetchProducts = async () => {
+      setLoading(true);
+
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}get-product?page=${currentPage}&limit=${limit}&search=${search}`);
+
+        if(response.data.success){
+          setProducts(response.data.products);
+          setTotalItems(response.data.pagination.totalProducts);
+          setTotalPages(response.data.pagination.totalPages);
+        } else {
+          console.error("Failed to fetch products:", response.data.message);
+        }
+      } catch (error: any) {
+        console.error("Error fetching products:", error?.message) 
+      } finally {
+        setLoading(false);
+
+      }
+    }
+
+    fetchProducts();
+  },[currentPage, limit, search]);
+
+  const filteredItems = products?.filter((item) => {
+    const searchMatch = item?.name?.toLowerCase()?.includes(search?.toLowerCase());
+    const purityMatch = purity === "All Purity" || item?.purity === purity;
+    const typeMatch = type === "All Types" || item?.type === type;
+    return searchMatch && purityMatch && typeMatch;
+  });
+
+  const handleSaveNewProduct = (data: IProduct) => {
+    setProducts((prevProducts) => [ data, ...(prevProducts || [])]);
+    setAddProductOpen(false);
+    setCurrentPage(1);
+  }
+
+  const handleSaveEditedProduct = (data: IProduct) => {
+    setProducts((prevProducts) => {
+      if (!prevProducts) return [data];
+      return prevProducts.map((p) => (p._id === data._id ? data : p));
+    });
+    setEditProductOpen(false);
+  }
+
+  const handleDeleteProduct = async(id: string) => {
+  setDeleting(true);
+
+  try {
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_BASE_URL}delete-product/${id}`);
+    if (response?.data?.success) {
+      setProducts((prevProducts) => {
+    if (!prevProducts) return null;
+    return prevProducts.filter((p) => p._id.toString() !== id);
+  });
+    }
+    else {
+      console.error("Failed to delete product:", response?.data?.message);
+    }
+  } catch (error: any) {
+    console.error("Error deleting product:", error?.message);
+  } finally {
+    setDeleting(false);
+    
+  }
+}
 
   const tableHeaders = [
     { label: "Item ID", key: "id" },
@@ -180,6 +265,7 @@ function MainSection() {
             fontWeight: 500,
             letterSpacing: "0.02em",
           }}
+          onClick={() => setAddProductOpen(true)}
         >
           <Plus size={16} strokeWidth={2.5} />
           New Item
@@ -242,11 +328,18 @@ function MainSection() {
         </div>
 
         {/* Table Rows */}
-        {mockItems.map((item, idx) => (
+        {
+          loading ? (
+            <div className="p-6 text-center text-[#5C4A3A]">
+              Loading products...
+            </div>
+          ) : products && products.length > 0 ? (
+            <div>
+              {filteredItems?.map((item, idx) => (
           <div
-            key={item.id}
+            key={item._id.toString()}
             className={`grid items-center px-6 py-5 transition-colors duration-150 hover:bg-[#F5EDE4] ${
-              idx !== mockItems.length - 1 ? "border-b border-[#EDE4DA]" : ""
+              idx !== filteredItems?.length - 1 ? "border-b border-[#EDE4DA]" : ""
             }`}
             style={{ gridTemplateColumns: "120px 1fr 110px 110px 100px 110px 130px 100px" }}
           >
@@ -255,7 +348,7 @@ function MainSection() {
               className="text-[#6B5040]"
               style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
             >
-              {item.id}
+              {item?.huid || "#N/A"}
             </span>
 
             {/* Product Name */}
@@ -267,12 +360,12 @@ function MainSection() {
                 fontWeight: 600,
               }}
             >
-              {item.productName}
+              {item?.name}
             </span>
 
             {/* Purity */}
             <div>
-              <PurityBadge label={item.purity} />
+              <PurityBadge label={item?.purity} />
             </div>
 
             {/* Type */}
@@ -292,7 +385,7 @@ function MainSection() {
                 fontWeight: 600,
               }}
             >
-              {item.weightG.toFixed(2)}
+              {item?.weight?.toFixed(2)}
             </span>
 
             {/* HSN Code */}
@@ -300,7 +393,7 @@ function MainSection() {
               className="text-[#6B5040]"
               style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
             >
-              {item.hsnCode}
+              {item?.hsn || "N/A"}
             </span>
 
             {/* Making Charge */}
@@ -312,7 +405,7 @@ function MainSection() {
                 fontWeight: 500,
               }}
             >
-              ₹{item.makingCharge.toLocaleString("en-IN")}
+              {item?.makingCharge ? '₹' + item?.makingCharge?.toLocaleString() : "N/A"}
             </span>
 
             {/* Actions */}
@@ -321,17 +414,24 @@ function MainSection() {
                 aria-label="Edit"
                 className="text-[#5BB8D4] hover:text-[#3A9AB8] transition-colors duration-150"
               >
-                <Pencil size={20} strokeWidth={1.6} />
+                <Pencil size={20} strokeWidth={1.6} onClick={() => {
+                  setSelectEditProduct(item);
+                  setEditProductOpen(true);
+                }} />
               </button>
-              <button
-                aria-label="Delete"
-                className="text-[#C0392B] hover:text-[#96281B] transition-colors duration-150"
-              >
-                <Trash2 size={20} strokeWidth={1.6} />
-              </button>
+              <DeleteProductAlert productName={item?.name} productId={item?._id?.toString()} onConfirm={()=>{
+                handleDeleteProduct(item?._id?.toString());
+              }} />
             </div>
           </div>
         ))}
+            </div>
+          ) : (
+            <div className="p-6 text-center text-[#5C4A3A]">
+              No products found.
+            </div>
+          )
+        }
 
         {/* ── Footer: Count + Pagination ── */}
         <div className="flex items-center justify-between px-6 py-5 border-t border-[#E8DDD4]">
@@ -340,44 +440,33 @@ function MainSection() {
             className="text-[#9E8A7E] tracking-[0.08em] uppercase"
             style={{ fontFamily: "'Georgia', serif", fontSize: "11px" }}
           >
-            Showing 1 to {mockItems.length} of {totalItems} Items
+            Showing {(currentPage-1)*limit + 1} to {products?.length} of {totalItems} Items
           </span>
 
           {/* Pagination */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="w-9 h-9 flex items-center justify-center rounded-md text-[#6B5040] hover:bg-[#EDE4DA] disabled:opacity-30 transition-colors duration-150"
-            >
-              <ChevronLeft size={16} strokeWidth={2} />
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-9 h-9 flex items-center justify-center rounded-md text-[13px] font-semibold transition-colors duration-150 ${
-                  currentPage === page
-                    ? "bg-[#6B2020] text-white"
-                    : "text-[#5C4A3A] hover:bg-[#EDE4DA]"
-                }`}
-                style={{ fontFamily: "'Georgia', serif" }}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="w-9 h-9 flex items-center justify-center rounded-md text-[#6B5040] hover:bg-[#EDE4DA] disabled:opacity-30 transition-colors duration-150"
-            >
-              <ChevronRight size={16} strokeWidth={2} />
-            </button>
-          </div>
+          <Pagination totalPages={totalPages}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage} />
         </div>
       </div>
+      {addProductOpen && (
+                <CreateProductModal
+                    onClose={() => setAddProductOpen(false)}
+                    onSave={(data: IProduct) => {
+                      handleSaveNewProduct(data);
+                    }}
+                />
+            )}
+      {editProductOpen && (
+                <EditProductModal
+                    product={selectEditProduct || null}
+                    onClose={() => setEditProductOpen(false)}
+                    onSave={(data: IProduct) => {
+                      handleSaveEditedProduct(data);
+                    }}
+                />
+            )}
+
     </div>
   );
 }

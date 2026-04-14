@@ -139,12 +139,30 @@ function SelectField({
 interface CreateProductModalProps {
   onClose?: () => void;
   onSave?: (data: IProduct) => void;
+  product: IProduct | null;
 }
 
-export default function CreateProductModal({ onClose, onSave }: CreateProductModalProps) {
+export default function EditProductModal({ onClose, onSave, product }: CreateProductModalProps) {
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<FieldError>({});
   const [submitted, setSubmitted] = useState(false);
+  
+  useEffect(()=>{
+    if(product){
+        setForm({
+            name: product?.name || "",
+            description: product?.description || "",
+            weight: product?.weight.toString() || "",
+            price: product?.price.toString() || "",
+            stock: product?.stock.toString() || "",
+            type: product?.type || "",
+            purity: product?.purity || "",
+            makingCharge: product?.makingCharge.toString() || "",
+            huid: product?.huid || "",
+            hsn: product?.hsn?.toString() || "",
+        })
+    }
+  },[product])
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -180,7 +198,7 @@ export default function CreateProductModal({ onClose, onSave }: CreateProductMod
       setSubmitted(true);
       
       try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}add-product`, {
+        const response = await axios.patch(`${process.env.NEXT_PUBLIC_BASE_URL}edit-product/${product?._id}`, {
           name: form.name,
           description: form.description,
           weight: Number(form.weight),
@@ -194,9 +212,9 @@ export default function CreateProductModal({ onClose, onSave }: CreateProductMod
         });
 
         if(response.data.success){
-          onSave?.(response.data.savedProduct);
+          onSave?.(response.data.updatedProduct);
         } else {
-          console.error("Failed to add product:", response.data.message);
+          console.error("Failed to edit product:", response.data.message);
         }
 
       } catch (error: any) {
@@ -252,7 +270,7 @@ export default function CreateProductModal({ onClose, onSave }: CreateProductMod
               fontWeight: 400,
             }}
           >
-            Add New Product
+            Edit Product
           </h2>
           <div className="mt-4 w-10 h-[2px] rounded-full bg-[#8B6914]" />
         </div>
@@ -417,8 +435,7 @@ export default function CreateProductModal({ onClose, onSave }: CreateProductMod
               className="flex items-center gap-2 bg-[#6B1A1A] hover:bg-[#521414] text-white px-8 py-3.5 rounded-md tracking-[0.16em] uppercase transition-colors duration-200"
               style={{ fontFamily: "'Georgia', serif", fontSize: "12px", fontWeight: 700 }}
             >
-              <Plus size={14} strokeWidth={2.5} />
-              Add Product
+              Save Product
             </button>
           </div>
         </div>

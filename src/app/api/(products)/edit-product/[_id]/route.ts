@@ -1,10 +1,10 @@
 import dbconnect from "@/src/lib/dbconnect";
 import ProductModel from "@/src/models/Product";
 
-export async function PATCH(req: Request, { params }: { params: { _id: string } }) {
+export async function PATCH(req: Request, context: { params: Promise<{ _id: string }> }) {
     await dbconnect();
 
-    const { _id } = await params;
+    const { _id } = await context.params;
 
     try {
         const { name, description, weight, price, stock, type, purity, makingCharge, huid, hsn } = await req.json();

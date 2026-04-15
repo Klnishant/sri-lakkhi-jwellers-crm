@@ -1,9 +1,9 @@
 import dbconnect from "@/src/lib/dbconnect";
 import ProductModel from "@/src/models/Product";
 
-export async function DELETE(req: Request, { params }: { params: { _id: string } }) {
+export async function DELETE(req: Request, context: { params: Promise<{ _id: string }> }) {
     await dbconnect();
-    const { _id } = await params;
+    const { _id } = await context.params;
 
     try {
         const deletedProduct = await ProductModel.findByIdAndDelete(_id);

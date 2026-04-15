@@ -10,7 +10,7 @@ import CreateProductModal from "../components/products/CreateProduct";
 
 export default function Home() {
   return (
-    <main className="min-h-100vh">
+    <div className="min-h-100vh">
       <NavBar />
       <HeroSection />
       <HeritageSection />
@@ -19,6 +19,6 @@ export default function Home() {
       {/* <AddStaffModal /> */}
       {/* <CreateProductModal /> */}
       <Footer />
-    </main>
+    </div>
   );
 }

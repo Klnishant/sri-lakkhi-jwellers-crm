@@ -7,6 +7,8 @@ export interface ISHOP extends Document {
     contactNumber: string;
     email: string;
     termsAndConditions: string;
+    goldRatePer10g: number;
+    silverRatePerKg: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -19,6 +21,8 @@ const ShopSchema: Schema = new Schema<ISHOP>(
         contactNumber: { type: String, required: true },
         email: { type: String, required: true },
         termsAndConditions: { type: String },
+        goldRatePer10g: { type: Number, required: true },
+        silverRatePerKg: { type: Number, required: true },
     },
     { timestamps: true }
 );

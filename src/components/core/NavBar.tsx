@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CircleUserRound, Menu, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { User } from "next-auth";
+import { useSession } from "next-auth/react";
+import ProfileDropdown from "../ui/Profiledropdown";
 
 type NavItem = {
   label: string;
@@ -20,6 +23,16 @@ const navItems: NavItem[] = [
 export default function NavBar() {
   const [activeItem, setActiveItem] = useState<string>("HOME");
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  const {data: session} = useSession()
+
+  useEffect(() => {
+    if(!session || !session.user) {
+      return;
+    }
+    setUser(session.user as User);
+  }, [session]);
 
   return (
     <nav className="w-full bg-[#FFF8F7] border-b border-[#E8DDD4] shadow-sm">
@@ -66,7 +79,13 @@ export default function NavBar() {
         {/* Right side — User icon + mobile hamburger */}
         <div className="flex items-center gap-4">
           {/* User Icon */}
-          <button
+          {
+            user ? (
+              <div>
+                <ProfileDropdown />
+              </div>
+            ) : (
+              <button
             aria-label="User account"
             className="text-[#3D2B1F] hover:text-[#8B6914] transition-colors duration-200"
           >
@@ -76,6 +95,8 @@ export default function NavBar() {
               className="text-[#3D2B1F] hover:text-[#8B6914] transition-colors"
             />
           </button>
+            )
+          }
 
           {/* Mobile Hamburger */}
           <button

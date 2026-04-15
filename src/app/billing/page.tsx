@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Plus, Printer, Save } from "lucide-react";
+import { Trash2, Plus, Printer, Save, Download } from "lucide-react";
 import NavBar from "@/src/components/core/NavBar";
 import Footer from "@/src/components/core/Footer";
+import html2pdf from "html2pdf.js";
+import { renderToStaticMarkup } from "react-dom/server";
+import InvoiceTemplate from "@/src/components/ui/InvoiceTemplate";
+import GSTInvoice from "@/src/components/ui/GSTInvoice";
 
 // ── Types ──────────────────────────────────────────────
 type LineItem = {
@@ -70,6 +74,23 @@ function FormInput({
   );
 }
 
+export function generateHTML(data: any) {
+  return `
+    <html>
+      <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+          @page { size: A4; }
+          body { margin: 0; }
+        </style>
+      </head>
+      <body>
+        ${renderToStaticMarkup(<GSTInvoice />)}
+      </body>
+    </html>
+  `;
+}
+
 // ── Main Component ─────────────────────────────────────
 function BillingMainSection() {
   const [client, setClient] = useState<ClientInfo>({
@@ -122,6 +143,67 @@ function BillingMainSection() {
       },
     ]);
   };
+
+  const data = {
+    invoiceNo: "INV-001",
+    date: "15-04-2026",
+    customer: {
+      name: "Anjali Sharma",
+      address: "Jaipur",
+      mobile: "9123456789",
+      state: "Rajasthan",
+    },
+    items: [
+      {
+        name: "Gold Chain",
+        hsn: "7113",
+        purity: "22K",
+        grossWeight: 18.5,
+        netWeight: 18,
+        rate: 6400,
+        making: 1500,
+      },
+    ],
+    subtotal: 120000,
+    cgst: 1800,
+    sgst: 1800,
+    total: 123600,
+  };
+  
+  const handleDownload = async () => {
+  const html = generateHTML(data);
+
+  const res = await fetch("/api/invoice/pdf", {
+    method: "POST",
+    body: JSON.stringify({ html }),
+  });
+
+  const blob = await res.blob();
+
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "invoice.pdf";
+  a.click();
+};
+
+const handlePrint = async () => {
+  const html = generateHTML(data);
+
+  const res = await fetch("/api/invoice/pdf", {
+    method: "POST",
+    body: JSON.stringify({ html }),
+  });
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+
+  const newTab = window.open();
+  if (newTab) {
+    newTab.location.href = url; // ✅ set after opening
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#FFF8F7] px-6 md:px-12 lg:px-16 pt-12 pb-20 flex flex-col lg:flex-row gap-10">
@@ -323,6 +405,19 @@ function BillingMainSection() {
           >
             Live Preview
           </p>
+          <div className="flex gap-5">
+            <button
+            className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] px-5 py-2.5 rounded-md tracking-[0.06em] transition-colors duration-200"
+            style={{
+              fontFamily: "'Georgia', serif",
+              fontSize: "13px",
+              fontWeight: 600,
+            }}
+            onClick={handleDownload}
+          >
+            <Download size={15} strokeWidth={2} />
+            Download PDF
+          </button>
           <button
             className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] px-5 py-2.5 rounded-md tracking-[0.06em] transition-colors duration-200"
             style={{
@@ -330,287 +425,17 @@ function BillingMainSection() {
               fontSize: "13px",
               fontWeight: 600,
             }}
+            onClick={handlePrint}
           >
             <Printer size={15} strokeWidth={2} />
             Print PDF
           </button>
+          </div>
         </div>
 
         {/* Invoice Card */}
-        <div className="bg-white rounded-xl shadow-xl px-10 py-10 flex flex-col gap-8 flex-1">
-          {/* Invoice Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h2
-                className="text-[#4A1A1A] mb-1"
-                style={{
-                  fontFamily: "'Georgia', 'Times New Roman', serif",
-                  fontSize: "clamp(20px, 2.2vw, 28px)",
-                  fontWeight: 700,
-                }}
-              >
-                Lakhhi Jewellers
-              </h2>
-              <p
-                className="text-[#9E8A7E] tracking-[0.12em] uppercase"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "10px" }}
-              >
-                Excellence in Heritage Since 1924
-              </p>
-            </div>
-            <p
-              className="text-[#DDD0C4]"
-              style={{
-                fontFamily: "'Georgia', serif",
-                fontSize: "clamp(24px, 3vw, 40px)",
-                fontWeight: 400,
-                fontStyle: "italic",
-                letterSpacing: "0.02em",
-              }}
-            >
-              Invoice
-            </p>
-          </div>
-
-          {/* Bill To + Date/No */}
-          <div className="flex items-start justify-between">
-            <div>
-              <p
-                className="text-[#9E8A7E] uppercase tracking-[0.1em] mb-2"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                }}
-              >
-                Bill To:
-              </p>
-              <p
-                className="text-[#2C1A0E] mb-1"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "18px",
-                  fontWeight: 600,
-                }}
-              >
-                {client.name}
-              </p>
-              <p
-                className="text-[#9E8A7E]"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
-              >
-                {client.email}
-              </p>
-            </div>
-            <div className="text-right">
-              <p
-                className="text-[#9E8A7E] uppercase tracking-[0.1em] mb-3"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                }}
-              >
-                Date / No:
-              </p>
-              <p
-                className="text-[#2C1A0E] mb-1"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                }}
-              >
-                {invoiceDate}
-              </p>
-              <p
-                className="text-[#8B6914]"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                }}
-              >
-                {invoiceNo}
-              </p>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div>
-            {/* Table Header */}
-            <div
-              className="grid border-b border-[#E8DDD4] pb-3 mb-1"
-              style={{ gridTemplateColumns: "1fr 90px 110px 110px" }}
-            >
-              {["Description", "Weight (G)", "Rate", "Total"].map((h) => (
-                <p
-                  key={h}
-                  className={`text-[#9E8A7E] tracking-[0.12em] uppercase ${h !== "Description" ? "text-right" : ""}`}
-                  style={{
-                    fontFamily: "'Georgia', serif",
-                    fontSize: "10px",
-                    fontWeight: 600,
-                  }}
-                >
-                  {h}
-                </p>
-              ))}
-            </div>
-
-            {/* Table Rows */}
-            {items.map((item, idx) => (
-              <div
-                key={item.id}
-                className={`grid items-start py-5 ${idx !== items.length - 1 ? "border-b border-[#F0E8E0]" : ""}`}
-                style={{ gridTemplateColumns: "1fr 90px 110px 110px" }}
-              >
-                <div>
-                  <p
-                    className="text-[#4A1A1A] mb-1"
-                    style={{
-                      fontFamily: "'Georgia', serif",
-                      fontSize: "14px",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {item.name}
-                  </p>
-                  <p
-                    className="text-[#9E8A7E]"
-                    style={{ fontFamily: "'Georgia', serif", fontSize: "12px" }}
-                  >
-                    {item.subtitle.replace("·", "Artisanal Gold Work")}
-                  </p>
-                </div>
-                <p
-                  className="text-[#5C4A3A] text-right"
-                  style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
-                >
-                  {item.weightG}
-                </p>
-                <p
-                  className="text-[#5C4A3A] text-right"
-                  style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
-                >
-                  {fmt(item.rate)}
-                </p>
-                <p
-                  className="text-[#2C1A0E] text-right"
-                  style={{
-                    fontFamily: "'Georgia', serif",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                  }}
-                >
-                  {fmt(item.rate)}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* Totals */}
-          <div className="border-t border-[#E8DDD4] pt-6 flex flex-col gap-2 items-end">
-            <div className="flex justify-between w-full max-w-[280px]">
-              <p
-                className="text-[#9E8A7E] uppercase tracking-[0.1em]"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "11px" }}
-              >
-                Subtotal
-              </p>
-              <p
-                className="text-[#5C4A3A]"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
-              >
-                {fmt(subtotal)}
-              </p>
-            </div>
-            <div className="flex justify-between w-full max-w-[280px]">
-              <p
-                className="text-[#9E8A7E] uppercase tracking-[0.1em]"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "11px" }}
-              >
-                Insurance &amp; Tax
-              </p>
-              <p
-                className="text-[#5C4A3A]"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
-              >
-                {fmt(tax)}
-              </p>
-            </div>
-            <div className="flex justify-between w-full max-w-[280px] mt-2 items-baseline">
-              <p
-                className="text-[#2C1A0E] uppercase tracking-[0.12em]"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                }}
-              >
-                Total Amount
-              </p>
-              <p
-                className="text-[#4A1A1A]"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "clamp(20px, 2vw, 26px)",
-                  fontWeight: 700,
-                }}
-              >
-                {fmt(total)}
-              </p>
-            </div>
-          </div>
-
-          {/* Footer: T&C + Signature */}
-          <div className="flex items-end justify-between border-t border-[#F0E8E0] pt-6">
-            <div className="max-w-[300px]">
-              <p
-                className="text-[#5C4A3A] mb-2"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                }}
-              >
-                Term and Condition
-              </p>
-              <p
-                className="text-[#9E8A7E] leading-[1.65]"
-                style={{ fontFamily: "'Georgia', serif", fontSize: "11px" }}
-              >
-                All luxury items are certified by the National Gemological
-                Institute.
-                <br />
-                Return policy applies within 14 days for exchange only.
-              </p>
-            </div>
-            <div className="text-right">
-              <p
-                className="text-[#DDD0C4] border-b border-[#DDD0C4] pb-1 mb-2 min-w-[140px]"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "18px",
-                  fontStyle: "italic",
-                  color: "#C8B8A8",
-                }}
-              >
-                Signature
-              </p>
-              <p
-                className="text-[#9E8A7E] tracking-[0.12em] uppercase"
-                style={{
-                  fontFamily: "'Georgia', serif",
-                  fontSize: "9px",
-                  fontWeight: 600,
-                }}
-              >
-                Authorized Signatory
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* <InvoiceTemplate data={data} /> */}
+        <GSTInvoice />
       </div>
     </div>
   );

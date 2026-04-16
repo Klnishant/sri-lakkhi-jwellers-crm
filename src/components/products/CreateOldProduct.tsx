@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { IPRODUCTS } from "@/src/models/Product";
 import axios from "axios";
+import { IProduct } from "@/src/models/OldProduct";
 
 // ── Types ──────────────────────────────────────────────
 type ProductType = "Gold" | "Silver" | "Other";
@@ -29,9 +30,7 @@ type ProductForm = {
   stock: string;
   type: ProductType | "";
   purity: Purity | "";
-  makingCharge: string;
   huid: string;
-  hsn: string;
 };
 
 type FieldError = Partial<Record<keyof ProductForm, string>>;
@@ -41,8 +40,7 @@ const PURITIES: Purity[] = ["18k", "22k", "24k", "Other"];
 
 const EMPTY_FORM: ProductForm = {
   name: "", description: "", weight: "", price: "",
-  stock: "", type: "", purity: "", makingCharge: "", huid: "",
-  hsn: "",
+  stock: "", type: "", purity: "", huid: "",
 };
 
 // ── Section Title ──────────────────────────────────────
@@ -138,10 +136,10 @@ function SelectField({
 // ── Modal Component ────────────────────────────────────
 interface CreateProductModalProps {
   onClose?: () => void;
-  onSave?: (data: IPRODUCTS) => void;
+  onSave?: (data: IProduct) => void;
 }
 
-export default function CreateProductModal({ onClose, onSave }: CreateProductModalProps) {
+export default function CreateOldProductModal({ onClose, onSave }: CreateProductModalProps) {
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<FieldError>({});
   const [submitted, setSubmitted] = useState(false);
@@ -169,41 +167,13 @@ export default function CreateProductModal({ onClose, onSave }: CreateProductMod
       e.stock = "Enter valid stock.";
     if (!form.type) e.type = "Select a type.";
     if (!form.purity) e.purity = "Select purity.";
-    if (form.makingCharge && (isNaN(Number(form.makingCharge)) || Number(form.makingCharge) < 0))
-      e.makingCharge = "Enter a valid charge.";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async() => {
     if (validate()) {
-      setSubmitted(true);
-      
-      try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}add-product`, {
-          name: form.name,
-          description: form.description,
-          weight: Number(form.weight),
-          price: Number(form.price),
-          stock: Number(form.stock),
-          type: form.type,
-          purity: form.purity,
-          makingCharge: form.makingCharge ? Number(form.makingCharge) : undefined,
-          huid: form.huid,
-          hsn: form.hsn,
-        });
-
-        if(response.data.success){
-          onSave?.(response.data.savedProduct);
-        } else {
-          console.error("Failed to add product:", response.data.message);
-        }
-
-      } catch (error: any) {
-        console.error("Error saving product:", error);
-      } finally {
-        setSubmitted(false);
-      }
+     onSave?.({ ...form } as unknown as IProduct)
     }
   };
 
@@ -252,7 +222,7 @@ export default function CreateProductModal({ onClose, onSave }: CreateProductMod
               fontWeight: 400,
             }}
           >
-            Add New Product
+            Add Old Product
           </h2>
           <div className="mt-4 w-10 h-[2px] rounded-full bg-[#8B6914]" />
         </div>
@@ -344,16 +314,6 @@ export default function CreateProductModal({ onClose, onSave }: CreateProductMod
                 />
               </FieldWrapper>
 
-              <FieldWrapper label="Making Charge (₹)" error={errors.makingCharge}>
-                <InputField
-                  icon={<IndianRupee size={15} strokeWidth={1.6} />}
-                  placeholder="14500"
-                  value={form.makingCharge}
-                  onChange={(v) => set("makingCharge", v)}
-                  type="number"
-                  hasError={!!errors.makingCharge}
-                />
-              </FieldWrapper>
             </div>
           </div>
 

@@ -17,6 +17,8 @@ import {
   Hash,
   Coins,
   LogOut,
+  CirclePercent,
+  CreditCard,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import axios from "axios";
@@ -30,8 +32,15 @@ type IShop = {
   address: string;
   contactNumber: string;
   email: string;
+  accountNumber: string;
+  ifscCode: string;
   goldRatePer10g: string;
   silverRatePerKg: string;
+  sgst: string;
+  cgst: string;
+  igst: string;
+  gstOnMakingCharge: string;
+  customDuty: string;
   termsAndConditions: string;
 };
 
@@ -51,8 +60,15 @@ const INITIAL_PROFILE: UserProfile = {
     address: "124 Heritage Plaza, Suite 400, Calcutta, WB 700001",
     contactNumber: "+91 98300 12345",
     email: "contact@lakhhi.com",
+    accountNumber: "1234567890",
+    ifscCode: "SBIN0001234",
     goldRatePer10g: "72,450",
     silverRatePerKg: "89,200",
+    sgst: "9",
+    cgst: "9",
+    igst: "0",
+    gstOnMakingCharge: "18",
+    customDuty: "0",
     termsAndConditions:
       "All luxury items are certified by the National Gemological Institute. Return policy applies within 14 days for exchange only. Gold rates are subject to daily market revision.",
   },
@@ -473,6 +489,20 @@ export default function ProfileDropdown() {
                     editing={editing}
                     onChange={(v) => setDraftField("email", v)}
                   />
+                  <EditableField
+                    icon={<CreditCard size={10} strokeWidth={2.2} />}
+                    label="Account Number"
+                    value={editing ? draft?.accountNumber ?? "" : profile.shop.accountNumber}
+                    editing={editing}
+                    onChange={(v) => setDraftField("accountNumber", v)}
+                  />
+                  <EditableField
+                    icon={<CreditCard size={10} strokeWidth={2.2} />}
+                    label="IFSC Code"
+                    value={editing ? draft?.ifscCode ?? "" : profile.shop.ifscCode}
+                    editing={editing}
+                    onChange={(v) => setDraftField("ifscCode", v)}
+                  />
                 </div>
               </div>
 
@@ -529,7 +559,7 @@ export default function ProfileDropdown() {
                     )}
                   </div>
 
-                  {/* Silver Rate */}
+                  {/* Silver Rate / kg */}
                   <div
                     className="rounded-lg px-4 py-3"
                     style={{
@@ -575,6 +605,246 @@ export default function ProfileDropdown() {
                       </p>
                     )}
                   </div>
+                </div>
+              </div>
+
+              <div>
+                <SectionLabel icon={<CirclePercent size={13} strokeWidth={2} />}>
+                  Multiple Tax Rates
+                </SectionLabel>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* SGST Rate */}
+                  <div
+                    className="rounded-lg px-4 py-3"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #FDF3DC 0%, #FBE8B0 100%)",
+                      border: "1px solid #E8D080",
+                    }}
+                  >
+                    <p
+                      className="text-[#8B6914] tracking-[0.1em] uppercase mb-1"
+                      style={{
+                        fontFamily: "'Georgia', serif",
+                        fontSize: "9px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      SGST Rate %
+                    </p>
+                    {editing ? (
+                      <input
+                        type="text"
+                        value={draft?.sgst ?? ""}
+                        onChange={(e) =>
+                          setDraftField("sgst", e.target.value)
+                        }
+                        className="w-full bg-transparent text-[#5C3D00] focus:outline-none border-b border-[#C9A84C]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      />
+                    ) : (
+                      <p
+                        className="text-[#5C3D00]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {draft?.sgst || "0"} %
+                      </p>
+                    )}
+                  </div>
+
+                  {/* CGST Rate */}
+                  <div
+                    className="rounded-lg px-4 py-3"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #F4F4F6 0%, #E8E8EC 100%)",
+                      border: "1px solid #D0D0D8",
+                    }}
+                  >
+                    <p
+                      className="text-[#6B6B7A] tracking-[0.1em] uppercase mb-1"
+                      style={{
+                        fontFamily: "'Georgia', serif",
+                        fontSize: "9px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      CGST Rate %
+                    </p>
+                    {editing ? (
+                      <input
+                        type="text"
+                        value={draft?.cgst ?? ""}
+                        onChange={(e) =>
+                          setDraftField("cgst", e.target.value)
+                        }
+                        className="w-full bg-transparent text-[#3A3A4A] focus:outline-none border-b border-[#A0A0B0]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      />
+                    ) : (
+                      <p
+                        className="text-[#3A3A4A]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {draft?.cgst || "0"} %
+                      </p>
+                    )}
+                  </div>
+                  {/* IGST Rate */}
+                  <div
+                    className="rounded-lg px-4 py-3"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #F4F4F6 0%, #E8E8EC 100%)",
+                      border: "1px solid #D0D0D8",
+                    }}
+                  >
+                    <p
+                      className="text-[#6B6B7A] tracking-[0.1em] uppercase mb-1"
+                      style={{
+                        fontFamily: "'Georgia', serif",
+                        fontSize: "9px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      IGST Rate %
+                    </p>
+                    {editing ? (
+                      <input
+                        type="text"
+                        value={draft?.igst ?? ""}
+                        onChange={(e) =>
+                          setDraftField("igst", e.target.value)
+                        }
+                        className="w-full bg-transparent text-[#3A3A4A] focus:outline-none border-b border-[#A0A0B0]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      />
+                    ) : (
+                      <p
+                        className="text-[#3A3A4A]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {draft?.igst || "0"} %
+                      </p>
+                    )}
+                  </div>
+                  {/* GST on Making Charge */}
+                  <div
+                    className="rounded-lg px-4 py-3"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #F4F4F6 0%, #E8E8EC 100%)",
+                      border: "1px solid #D0D0D8",
+                    }}
+                  >
+                    <p
+                      className="text-[#6B6B7A] tracking-[0.1em] uppercase mb-1"
+                      style={{
+                        fontFamily: "'Georgia', serif",
+                        fontSize: "9px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      GST on Making Charge %
+                    </p>
+                    {editing ? (
+                      <input
+                        type="text"
+                        value={draft?.gstOnMakingCharge ?? ""}
+                        onChange={(e) =>
+                          setDraftField("gstOnMakingCharge", e.target.value)
+                        }
+                        className="w-full bg-transparent text-[#3A3A4A] focus:outline-none border-b border-[#A0A0B0]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      />
+                    ) : (
+                      <p
+                        className="text-[#3A3A4A]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {draft?.gstOnMakingCharge || "0"} %
+                      </p>
+                    )}
+                  </div>
+                  {/* Custom Duty */}
+                  <div
+                    className="rounded-lg px-4 py-3"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #F4F4F6 0%, #E8E8EC 100%)",
+                      border: "1px solid #D0D0D8",
+                    }}
+                  >
+                    <p
+                      className="text-[#6B6B7A] tracking-[0.1em] uppercase mb-1"
+                      style={{
+                        fontFamily: "'Georgia', serif",
+                        fontSize: "9px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Custom Duty %
+                    </p>
+                    {editing ? (
+                      <input
+                        type="text"
+                        value={draft?.customDuty ?? ""}
+                        onChange={(e) =>
+                          setDraftField("customDuty", e.target.value)
+                        }
+                        className="w-full bg-transparent text-[#3A3A4A] focus:outline-none border-b border-[#A0A0B0]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      />
+                    ) : (
+                      <p
+                        className="text-[#3A3A4A]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "15px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {draft?.customDuty || "0"} %
+                      </p>
+                    )}
+                  </div>
+
                 </div>
               </div>
 

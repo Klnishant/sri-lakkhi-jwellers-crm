@@ -1,13 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { Trash2, Plus, Printer, Save, Download } from "lucide-react";
+import { use, useEffect, useState } from "react";
+import { Trash2, Plus, Printer, Save, Download, Search } from "lucide-react";
 import NavBar from "@/src/components/core/NavBar";
 import Footer from "@/src/components/core/Footer";
 import html2pdf from "html2pdf.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import InvoiceTemplate from "@/src/components/ui/InvoiceTemplate";
 import GSTInvoice from "@/src/components/ui/GSTInvoice";
+import { ICustomer } from "@/src/models/Customer";
+import { IPRODUCTS } from "@/src/models/Product";
+import axios from "axios";
+import { useDebounceCallback } from "usehooks-ts";
+import CreateProductModal from "@/src/components/products/CreateProduct";
+import { IProduct } from "@/src/models/OldProduct";
+import CreateOldProductModal from "@/src/components/products/CreateOldProduct";
+import { ISHOP } from "@/src/models/Shop";
 
 // ── Types ──────────────────────────────────────────────
 type LineItem = {
@@ -28,6 +36,15 @@ type ClientInfo = {
   dob: Date;
   anniversary: Date;
 };
+
+export interface InvoiceData {
+  invoiceNo: string;
+  date: string;
+  customer: ICustomer | null;
+  items: IPRODUCTS[];
+  oldItems?: IProduct[];
+  shopDetails?: ISHOP | null;
+}
 
 // ── Helpers ────────────────────────────────────────────
 const fmt = (n: number) => "₹" + n.toLocaleString("en-IN");
@@ -74,7 +91,7 @@ function FormInput({
   );
 }
 
-export function generateHTML(data: any) {
+export function generateHTML(data: InvoiceData) {
   return `
     <html>
       <head>
@@ -85,7 +102,7 @@ export function generateHTML(data: any) {
         </style>
       </head>
       <body>
-        ${renderToStaticMarkup(<GSTInvoice />)}
+        ${renderToStaticMarkup(<GSTInvoice data={data} />)}
       </body>
     </html>
   `;
@@ -93,16 +110,18 @@ export function generateHTML(data: any) {
 
 // ── Main Component ─────────────────────────────────────
 function BillingMainSection() {
-  const [client, setClient] = useState<ClientInfo>({
-    name: "Eleanor Fitzgerald",
-    adress: "south mumbai, india",
-    phone: "+91 7700 900077",
-    email: "eleanor@example.com",
-    contact: "+91 7700 900077",
-    dueAmount: 0,
-    dob: new Date("2000-01-01"),
-    anniversary: new Date("2000-01-01"),
-  });
+  const [client, setClient] = useState<ICustomer | null>(null);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [products, setProducts] = useState<IPRODUCTS[]>([]);
+  const [selectedItems, setSelectedItems] = useState<IPRODUCTS[]>([]);
+  const [loading, setLoading] = useState(false);
+  const debouncedSearch = useDebounceCallback(setSearch, 300);
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [oldProducts, setOldProducts] = useState<IProduct[]>([]);
+  const [openOldProduct, setOpenOldProduct] = useState(false);
+  const [data, setData] = useState<InvoiceData | null>(null);
+  const [shopDetails, setShopDetails] = useState<ISHOP | null>(null);
 
   const [items, setItems] = useState<LineItem[]>([
     {
@@ -121,89 +140,119 @@ function BillingMainSection() {
     },
   ]);
 
-  const invoiceNo = "#LJ-2024-0089";
-  const invoiceDate = "24 Jan, 2026";
-
   const subtotal = items.reduce((sum, i) => sum + i.rate, 0);
   const tax = Math.round(subtotal * TAX_RATE);
   const total = subtotal + tax;
-
-  const removeItem = (id: string) =>
-    setItems((prev) => prev.filter((i) => i.id !== id));
-
-  const addItem = () => {
-    setItems((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        name: "New Item",
-        subtitle: "22K Gold",
-        weightG: 0,
-        rate: 0,
-      },
-    ]);
-  };
-
-  const data = {
-    invoiceNo: "INV-001",
-    date: "15-04-2026",
-    customer: {
-      name: "Anjali Sharma",
-      address: "Jaipur",
-      mobile: "9123456789",
-      state: "Rajasthan",
-    },
-    items: [
-      {
-        name: "Gold Chain",
-        hsn: "7113",
-        purity: "22K",
-        grossWeight: 18.5,
-        netWeight: 18,
-        rate: 6400,
-        making: 1500,
-      },
-    ],
-    subtotal: 120000,
-    cgst: 1800,
-    sgst: 1800,
-    total: 123600,
-  };
-  
-  const handleDownload = async () => {
-  const html = generateHTML(data);
-
-  const res = await fetch("/api/invoice/pdf", {
-    method: "POST",
-    body: JSON.stringify({ html }),
+  const invoiceDate = new Date().toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
+  const invoiceNo = `${new Date().getUTCFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}/${new Date().getTime()}`;
 
-  const blob = await res.blob();
-
-  const url = window.URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "invoice.pdf";
-  a.click();
-};
-
-const handlePrint = async () => {
-  const html = generateHTML(data);
-
-  const res = await fetch("/api/invoice/pdf", {
-    method: "POST",
-    body: JSON.stringify({ html }),
-  });
-
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-
-  const newTab = window.open();
-  if (newTab) {
-    newTab.location.href = url; // ✅ set after opening
+  const removeItem = (id: string) =>{
+    setSelectedItems((prev) => prev.filter((i) => i._id.toString() !== id));
+    setProducts((prev) => prev.map((i) => (i?._id?.toString() === id ? { ...i, stock: (i.stock || 0) + 1 } as IPRODUCTS : i)));
   }
-};
+
+  const removeOldItem = (idx: number) =>{
+    setOldProducts((prev) => prev.filter((_,i) => i !== i));
+  }
+
+  useEffect(() => {
+    const fetchShop = async () => {
+      try {
+        const response = await axios.get("/api/get-shop");
+        if (response.data.success) {
+          setShopDetails(response.data.shop);
+          console.log("Fetched shop details: ",response.data.shop);
+          
+        }
+      } catch (error) {
+        console.error("Failed to fetch shop details:", error);
+      }
+    };
+    fetchShop();
+  }, []);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASE_URL}get-product?limit=${5}&search=${search}`,
+        );
+
+        if (response.data.success) {
+          setProducts(response.data.products);
+        } else {
+          console.error("Failed to fetch products:", response.data.message);
+        }
+      } catch (error: any) {
+        console.error("Error fetching products:", error?.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [search]);
+
+  const handleSaveNewProduct = (data: IPRODUCTS) => {
+    setProducts((prevProducts) => [data, ...(prevProducts || [])]);
+    setOpenCreateModal(false);
+  };
+
+  useEffect(() => {
+      setData({
+        invoiceNo: invoiceNo,
+        date: invoiceDate,
+        customer: client,
+        items: selectedItems,
+        oldItems: oldProducts,
+        shopDetails: shopDetails,
+      });
+  }, [client, selectedItems, oldProducts,shopDetails]);
+
+  const handleDownload = async () => {
+    if (!data) return;
+    const html = generateHTML(data);
+
+    const res = await fetch("/api/invoice/pdf", {
+      method: "POST",
+      body: JSON.stringify({ html }),
+    });
+
+    const blob = await res.blob();
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "invoice.pdf";
+    a.click();
+  };
+
+  const handlePrint = async () => {
+    if (!data) return;
+    const html = generateHTML(data);
+
+    const res = await fetch("/api/invoice/pdf", {
+      method: "POST",
+      body: JSON.stringify({ html }),
+    });
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    const newTab = window.open();
+    if (newTab) {
+      newTab.document.write(`
+    <iframe src="${url}" style="width:100%;height:100%"></iframe>
+  `);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FFF8F7] px-6 md:px-12 lg:px-16 pt-12 pb-20 flex flex-col lg:flex-row gap-10">
@@ -249,22 +298,28 @@ const handlePrint = async () => {
             <FormInput
               label="Full Name"
               placeholder="Full Name"
-              value={client.name}
-              onChange={(v) => setClient((c) => ({ ...c, name: v }))}
+              value={client?.name || ""}
+              onChange={(v) =>
+                setClient((c) => ({ ...c, name: v }) as ICustomer | null)
+              }
             />
             <div className="flex gap-4">
               <FormInput
                 label="Address"
                 placeholder="Enter Address"
-                value={client.adress}
-                onChange={(v) => setClient((c) => ({ ...c, adress: v }))}
+                value={client?.adress || ""}
+                onChange={(v) =>
+                  setClient((c) => ({ ...c, adress: v }) as ICustomer | null)
+                }
                 className="flex-1"
               />
               <FormInput
                 label="Contact Number"
                 placeholder="+91 00000 00000"
-                value={client.contact}
-                onChange={(v) => setClient((c) => ({ ...c, contact: v }))}
+                value={client?.phone || ""}
+                onChange={(v) =>
+                  setClient((c) => ({ ...c, phone: v }) as ICustomer | null)
+                }
                 className="flex-1"
               />
             </div>
@@ -272,25 +327,41 @@ const handlePrint = async () => {
               <FormInput
                 label="Birth Date"
                 placeholder="Enter your birthday"
-                value={client.dob.toISOString().split("T")[0]}
-                onChange={(v) => setClient((c) => ({ ...c, dob: new Date(v) }))}
+                value={
+                  client?.dob ? client.dob.toISOString().split("T")[0] : ""
+                }
+                onChange={(v) =>
+                  setClient(
+                    (c) => ({ ...c, dob: new Date(v) }) as ICustomer | null,
+                  )
+                }
                 type="Date"
                 className="flex-1"
-               />
-               <FormInput
+              />
+              <FormInput
                 label="Marriage Date"
                 placeholder="Enter your marriage date"
-                value={client.anniversary.toISOString().split("T")[0]}
-                onChange={(v) => setClient((c) => ({ ...c, dob: new Date(v) }))}
+                value={
+                  client?.anniversary
+                    ? client.anniversary.toISOString().split("T")[0]
+                    : ""
+                }
+                onChange={(v) =>
+                  setClient(
+                    (c) =>
+                      ({ ...c, anniversary: new Date(v) }) as ICustomer | null,
+                  )
+                }
                 type="Date"
                 className="flex-1"
-               />
+              />
             </div>
           </div>
         </div>
 
         {/* Inventory Selection */}
         <div>
+          {/* HEADER */}
           <div className="flex items-center justify-between mb-4">
             <p
               className="text-[#8B6914] tracking-[0.15em] uppercase"
@@ -302,8 +373,9 @@ const handlePrint = async () => {
             >
               Inventory Selection
             </p>
+
             <button
-              onClick={addItem}
+              onClick={() => setOpen(!open)}
               className="flex items-center gap-1 text-[#3C000D] hover:text-[#C9A84C] transition-colors duration-200"
               style={{
                 fontFamily: "'Georgia', serif",
@@ -316,10 +388,84 @@ const handlePrint = async () => {
             </button>
           </div>
 
+          {/* 🔽 DROPDOWN */}
+          {open && (
+            <div className="mb-4 bg-white border border-[#EADFCF] rounded-md shadow-md p-3">
+              {/* SEARCH */}
+              <div className="flex items-center gap-2 border-b pb-2 mb-2">
+                <Search size={14} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name or ID..."
+                  className="w-full outline-none text-sm"
+                  style={{ fontFamily: "'Georgia', serif" }}
+                />
+              </div>
+
+              {/* RESULTS */}
+              <div className="max-h-48 overflow-y-auto">
+                {products?.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-3">
+                    No products found
+                  </p>
+                ) : (
+                  products?.map((p: IPRODUCTS) => (
+                    <div
+                      key={p._id.toString()}
+                      onClick={() => {
+                        setSelectedItems((prev) => [p, ...prev]);
+                        if(p?.stock>=1){
+                          setProducts((prev) => prev.map((i) => (i?._id?.toString() === p?._id?.toString() ? { ...i, stock: i?.stock - 1 } as IPRODUCTS : i)));
+                        }
+                        if(p?.stock<=1){
+                          setProducts((prev) => prev.filter((i) => i?._id?.toString() !== p?._id?.toString()));
+                        }
+                        
+                        setOpen(false);
+                      }}
+                      className="px-3 py-2 hover:bg-[#FFF0F1] rounded cursor-pointer transition"
+                    >
+                      <p
+                        className="text-[#2C1A0E]"
+                        style={{
+                          fontFamily: "'Georgia', serif",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {p.name}
+                      </p>
+                      <p className="text-xs text-[#9E8A7E]">ID: {p?.huid}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* FOOTER */}
+              <div className="border-t mt-2 pt-2">
+                <button
+                  onClick={() => {
+                    // open modal / redirect
+                    console.log("Create new product");
+                  }}
+                  className="w-full text-center text-[#3C000D] hover:text-[#C9A84C] text-sm"
+                  style={{
+                    fontFamily: "'Georgia', serif",
+                    fontWeight: 600,
+                  }}
+                >
+                  + Create New Product
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* EXISTING ITEMS */}
           <div className="flex flex-col gap-3">
-            {items.map((item) => (
+            {selectedItems?.map((item: IPRODUCTS) => (
               <div
-                key={item.id}
+                key={item?._id.toString()}
                 className="bg-[#FFF0F1] rounded-md px-5 py-4 flex items-start justify-between"
               >
                 <div>
@@ -331,15 +477,19 @@ const handlePrint = async () => {
                       fontWeight: 600,
                     }}
                   >
-                    {item.name}
+                    {item?.name}
                   </p>
                   <p
                     className="text-[#9E8A7E]"
-                    style={{ fontFamily: "'Georgia', serif", fontSize: "12px" }}
+                    style={{
+                      fontFamily: "'Georgia', serif",
+                      fontSize: "12px",
+                    }}
                   >
-                    {item.subtitle}
+                    {`${item?.purity} ${item?.type} · ${item?.weight}g`}
                   </p>
                 </div>
+
                 <div className="flex flex-col items-end gap-2">
                   <span
                     className="text-[#2C1A0E]"
@@ -349,17 +499,101 @@ const handlePrint = async () => {
                       fontWeight: 600,
                     }}
                   >
-                    {fmt(item.rate)}
+                    {fmt(item?.price)}
                   </span>
+
                   <button
-                    onClick={() => removeItem(item.id)}
-                    className="text-[#C0392B] hover:text-[#96281B] transition-colors duration-150"
+                    onClick={() => {
+                      removeItem(item?._id.toString())
+                      if(item?.stock===1){
+                        setProducts((prev) => [...(prev || []), item] as IPRODUCTS[]);
+                      }
+                    }}
+                    className="text-[#C0392B] hover:text-[#96281B]"
                   >
                     <Trash2 size={16} strokeWidth={1.6} />
                   </button>
                 </div>
               </div>
             ))}
+          </div>
+          <div className="flex items-center justify-between mb-4">
+            <p
+              className="text-[#8B6914] tracking-[0.15em] uppercase"
+              style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "11px",
+                fontWeight: 600,
+              }}
+            >
+              OLD PRODUCTS
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            {oldProducts?.map((item: IProduct,idx) => (
+              <div
+                key={item?._id?.toString() ?? idx}
+                className="bg-[#FFF0F1] rounded-md px-5 py-4 flex items-start justify-between"
+              >
+                <div>
+                  <p
+                    className="text-[#2C1A0E] mb-1"
+                    style={{
+                      fontFamily: "'Georgia', serif",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {item?.name}
+                  </p>
+                  <p
+                    className="text-[#9E8A7E]"
+                    style={{
+                      fontFamily: "'Georgia', serif",
+                      fontSize: "12px",
+                    }}
+                  >
+                    {`${item?.purity} ${item?.type} · ${item?.weight}g`}
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-end gap-2">
+                  <span
+                    className="text-[#2C1A0E]"
+                    style={{
+                      fontFamily: "'Georgia', serif",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {fmt(item?.price)}
+                  </span>
+
+                  <button
+                    onClick={() => {
+                      removeOldItem(idx)
+                    }}
+                    className="text-[#C0392B] hover:text-[#96281B]"
+                  >
+                    <Trash2 size={16} strokeWidth={1.6} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end mt-2">
+            <button
+              onClick={() => setOpenOldProduct(!open)}
+              className="flex items-center gap-1 text-[#3C000D] hover:text-[#C9A84C] transition-colors duration-200"
+              style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "12px",
+                fontWeight: 600,
+              }}
+            >
+              <Plus size={13} strokeWidth={2.5} />
+              Add old Item
+            </button>
           </div>
         </div>
 
@@ -375,19 +609,26 @@ const handlePrint = async () => {
           >
             Finalize Bill
           </button>
-          <button
-            className="flex items-center gap-2 border border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C]/10 px-7 py-4 rounded-md tracking-[0.06em] transition-colors duration-200"
-            style={{
-              fontFamily: "'Georgia', serif",
-              fontSize: "14px",
-              fontWeight: 500,
-            }}
-          >
-            <Save size={15} strokeWidth={1.8} />
-            Draft
-          </button>
         </div>
       </div>
+      {openCreateModal && (
+        <CreateProductModal
+          onClose={() => setOpenCreateModal(false)}
+          onSave={(data: IPRODUCTS) => {
+            handleSaveNewProduct(data);
+          }}
+        />
+      )}
+
+      {openOldProduct && (
+        <CreateOldProductModal
+          onClose={() => setOpenOldProduct(false)}
+          onSave={(data: IProduct) => {
+            setOldProducts((prev) => [data, ...prev]);
+            setOpenOldProduct(false);
+          }}
+        />
+      )}
 
       {/* ══════════════════════════════════════════
           RIGHT PANEL — Live Preview
@@ -407,35 +648,37 @@ const handlePrint = async () => {
           </p>
           <div className="flex gap-5">
             <button
-            className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] px-5 py-2.5 rounded-md tracking-[0.06em] transition-colors duration-200"
-            style={{
-              fontFamily: "'Georgia', serif",
-              fontSize: "13px",
-              fontWeight: 600,
-            }}
-            onClick={handleDownload}
-          >
-            <Download size={15} strokeWidth={2} />
-            Download PDF
-          </button>
-          <button
-            className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] px-5 py-2.5 rounded-md tracking-[0.06em] transition-colors duration-200"
-            style={{
-              fontFamily: "'Georgia', serif",
-              fontSize: "13px",
-              fontWeight: 600,
-            }}
-            onClick={handlePrint}
-          >
-            <Printer size={15} strokeWidth={2} />
-            Print PDF
-          </button>
+              className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] px-5 py-2.5 rounded-md tracking-[0.06em] transition-colors duration-200"
+              style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "13px",
+                fontWeight: 600,
+              }}
+              onClick={handleDownload}
+            >
+              <Download size={15} strokeWidth={2} />
+              Download PDF
+            </button>
+            <button
+              className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] px-5 py-2.5 rounded-md tracking-[0.06em] transition-colors duration-200"
+              style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "13px",
+                fontWeight: 600,
+              }}
+              onClick={handlePrint}
+            >
+              <Printer size={15} strokeWidth={2} />
+              Print PDF
+            </button>
           </div>
         </div>
 
         {/* Invoice Card */}
         {/* <InvoiceTemplate data={data} /> */}
-        <GSTInvoice />
+        {
+          data && <GSTInvoice data={data} />
+        }
       </div>
     </div>
   );
@@ -443,10 +686,10 @@ const handlePrint = async () => {
 
 export default function BillingPage() {
   return (
-    <main>
+    <div>
       <NavBar />
       <BillingMainSection />
       <Footer />
-    </main>
+    </div>
   );
 }

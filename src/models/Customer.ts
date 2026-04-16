@@ -6,10 +6,10 @@ export interface ICustomer extends Document {
   adress: string;
   dob: Date;
   anniversary: Date;
-  dueAmount: number;
-  advanceAmount: number;
-  createdAt: Date;
-  updatedAt: Date;
+  dueAmount?: number;
+  advanceAmount?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const CustomerSchema: Schema = new Schema<ICustomer>(

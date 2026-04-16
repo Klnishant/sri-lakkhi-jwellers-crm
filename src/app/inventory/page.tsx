@@ -17,7 +17,7 @@ import NavBar from "@/src/components/core/NavBar";
 import Footer from "@/src/components/core/Footer";
 import { useDebounceCallback } from "usehooks-ts";
 import { set } from "mongoose";
-import { IProduct } from "@/src/models/Product";
+import { IPRODUCTS } from "@/src/models/Product";
 import axios from "axios";
 import CreateProductModal from "@/src/components/products/CreateProduct";
 import EditProductModal from "@/src/components/products/EditProduct";
@@ -133,7 +133,7 @@ function SelectDropdown({
 
 // ── Main Component ─────────────────────────────────────
 function MainSection() {
-  const [products, setProducts] = useState<IProduct[] | null>(null);
+  const [products, setProducts] = useState<IPRODUCTS[] | null>(null);
   const [search, setSearch] = useState("");
   const [purity, setPurity] = useState("All Purity");
   const [type, setType] = useState("All Types");
@@ -144,7 +144,7 @@ function MainSection() {
   const [totalPages, setTotalPages] = useState(0);
   const [addProductOpen, setAddProductOpen] = useState(false);
   const [editProductOpen, setEditProductOpen] = useState(false);
-  const [selectEditProduct, setSelectEditProduct] = useState<IProduct | null>(null);
+  const [selectEditProduct, setSelectEditProduct] = useState<IPRODUCTS | null>(null);
   const [deleting, setDeleting] = useState(false);
   const debouncedSearch = useDebounceCallback(setSearch, 300);
 
@@ -180,13 +180,13 @@ function MainSection() {
     return searchMatch && purityMatch && typeMatch;
   });
 
-  const handleSaveNewProduct = (data: IProduct) => {
+  const handleSaveNewProduct = (data: IPRODUCTS) => {
     setProducts((prevProducts) => [ data, ...(prevProducts || [])]);
     setAddProductOpen(false);
     setCurrentPage(1);
   }
 
-  const handleSaveEditedProduct = (data: IProduct) => {
+  const handleSaveEditedProduct = (data: IPRODUCTS) => {
     setProducts((prevProducts) => {
       if (!prevProducts) return [data];
       return prevProducts.map((p) => (p._id === data._id ? data : p));
@@ -452,7 +452,7 @@ function MainSection() {
       {addProductOpen && (
                 <CreateProductModal
                     onClose={() => setAddProductOpen(false)}
-                    onSave={(data: IProduct) => {
+                    onSave={(data: IPRODUCTS) => {
                       handleSaveNewProduct(data);
                     }}
                 />
@@ -461,7 +461,7 @@ function MainSection() {
                 <EditProductModal
                     product={selectEditProduct || null}
                     onClose={() => setEditProductOpen(false)}
-                    onSave={(data: IProduct) => {
+                    onSave={(data: IPRODUCTS) => {
                       handleSaveEditedProduct(data);
                     }}
                 />

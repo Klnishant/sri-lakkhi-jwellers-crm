@@ -14,7 +14,7 @@ import {
   X,
   Plus,
 } from "lucide-react";
-import { IProduct } from "@/src/models/Product";
+import { IPRODUCTS } from "@/src/models/Product";
 import axios from "axios";
 
 // ── Types ──────────────────────────────────────────────
@@ -138,8 +138,8 @@ function SelectField({
 // ── Modal Component ────────────────────────────────────
 interface CreateProductModalProps {
   onClose?: () => void;
-  onSave?: (data: IProduct) => void;
-  product: IProduct | null;
+  onSave?: (data: IPRODUCTS) => void;
+  product: IPRODUCTS | null;
 }
 
 export default function EditProductModal({ onClose, onSave, product }: CreateProductModalProps) {

@@ -1,7 +1,13 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Printer } from "lucide-react";
+import { Logo } from "@/src/constants/constants";
+import { ISHOP } from "@/src/models/Shop";
+import axios from "axios";
+import { log } from "node:console";
+import { InvoiceData } from "@/src/app/billing/page";
+import { toCurrency } from "to-words";
 
 
 // ── Types ──────────────────────────────────────────────
@@ -24,119 +30,102 @@ type OldGoldExchange = {
   taxableAmt: number;
 };
 
-type InvoiceData = {
-  shopName: string;
-  shopTagline: string;
-  shopAddress: string;
-  gstin: string;
-  mobile: string;
-  web: string;
-  supplierName: string;
-  invoiceNo: string;
-  invoiceDate: string;
-  recipient: {
-    name: string;
-    address: string;
-    state: string;
-    code: string;
-    mobile: string;
-    placeOfSupply: string;
-  };
-  items: LineItem[];
-  oldGoldExchange?: OldGoldExchange;
-  cgstRate: number;
-  sgstRate: number;
-  igstRate: number;
-  roundOff: number;
-  amountInWords: string;
-  termsAndConditions: string[];
-};
+// type InvoiceData = {
+//   shopName: string;
+//   shopTagline: string;
+//   shopAddress: string;
+//   gstin: string;
+//   mobile: string;
+//   recipient: {
+//     name: string;
+//     address: string;
+//     state: string;
+//     code: string;
+//     mobile: string;
+//     placeOfSupply: string;
+//   };
+//   items: LineItem[];
+//   oldGoldExchange?: OldGoldExchange;
+//   cgstRate: number;
+//   sgstRate: number;
+//   igstRate: number;
+//   roundOff: number;
+//   amountInWords: string;
+//   termsAndConditions: string[];
+// };
 
 // ── Mock Invoice Data ──────────────────────────────────
-const invoice: InvoiceData = {
-  shopName: "SRI LAKHHI JEWELLERS",
-  shopTagline: "Jewellers since 1955",
-  shopAddress: "123, Main Bazaar, Jaipur, Rajasthan - 302001",
-  gstin: "09AAACNT2349121AN: ACR CAXXAK",
-  mobile: "+91 9876245210",
-  web: "www.srilakhhijewellers.com",
-  supplierName: "Rajput Jewellers,",
-  invoiceNo: "RJ/2024-25/00799",
-  invoiceDate: "24 May-2024",
-  recipient: {
-    name: "Anjali Sharma",
-    address: "W-45, Vaishali Nagar, Jaipur - 302021",
-    state: "Rajasthan",
-    code: "09",
-    mobile: "9125456799",
-    placeOfSupply: "Jaipur, Rajasthan",
-  },
-  items: [
-    {
-      sno: 1,
-      description: "Gold Chain (Mens)",
-      hsnCode: "7118",
-      purity: "22K (916)",
-      grossWtG: 18.50,
-      netWtG: 18.50,
-      ratePerG: 6400,
-      makingCharges: 7500,
-      taxableAmt: 125600,
-    },
-    {
-      sno: 2,
-      description: "Silver Anklets (Pair)",
-      hsnCode: "7118",
-      purity: "22K",
-      grossWtG: 25.00,
-      netWtG: 24.50,
-      ratePerG: 95,
-      makingCharges: 1800,
-      taxableAmt: 3850,
-    },
-    {
-      sno: 3,
-      description: "Diamond Earrings",
-      hsnCode: "7113",
-      purity: "18K/Diamonds",
-      grossWtG: 3.16,
-      netWtG: 2.10,
-      ratePerG: 0,
-      makingCharges: 18000,
-      taxableAmt: 58000,
-    },
-  ],
-  oldGoldExchange: {
-    item: "Ring",
-    purity: "22K",
-    weightG: 5.2,
-    taxableAmt: 31200,
-  },
-  cgstRate: 1.5,
-  sgstRate: 1.5,
-  igstRate: 0.3,
-  roundOff: 0,
-  amountInWords: "One Lakh Ninety Three Thousand Three Hundred Eighty Eight Only",
-  termsAndConditions: [
-    "The purchaser is confirmed has required as certified by Hallmark Specification - 916bit.",
-    "Diamonds are certified by recognized and accredited independent gemological laboratory.",
-    "Tax amount does not add a tax extra certification unless otherwise specified for old and new.",
-    "Secondary checking of all damaged or worn-out items requires certification before a return/replacement.",
-  ],
-};
+// const invoice: InvoiceData = {
+//   shopName: "SRI LAKHHI JEWELLERS",
+//   shopTagline: "Jewellers since 1955",
+//   shopAddress: "123, Main Bazaar, Jaipur, Rajasthan - 302001",
+//   gstin: "09AAACNT2349121AN: ACR CAXXAK",
+//   mobile: "+91 9876245210",
+//   recipient: {
+//     name: "Anjali Sharma",
+//     address: "W-45, Vaishali Nagar, Jaipur - 302021",
+//     state: "Rajasthan",
+//     code: "09",
+//     mobile: "9125456799",
+//     placeOfSupply: "Jaipur, Rajasthan",
+//   },
+//   items: [
+//     {
+//       sno: 1,
+//       description: "Gold Chain (Mens)",
+//       hsnCode: "7118",
+//       purity: "22K (916)",
+//       grossWtG: 18.50,
+//       netWtG: 18.50,
+//       ratePerG: 6400,
+//       makingCharges: 7500,
+//       taxableAmt: 125600,
+//     },
+//     {
+//       sno: 2,
+//       description: "Silver Anklets (Pair)",
+//       hsnCode: "7118",
+//       purity: "22K",
+//       grossWtG: 25.00,
+//       netWtG: 24.50,
+//       ratePerG: 95,
+//       makingCharges: 1800,
+//       taxableAmt: 3850,
+//     },
+//     {
+//       sno: 3,
+//       description: "Diamond Earrings",
+//       hsnCode: "7113",
+//       purity: "18K/Diamonds",
+//       grossWtG: 3.16,
+//       netWtG: 2.10,
+//       ratePerG: 0,
+//       makingCharges: 18000,
+//       taxableAmt: 58000,
+//     },
+//   ],
+//   oldGoldExchange: {
+//     item: "Ring",
+//     purity: "22K",
+//     weightG: 5.2,
+//     taxableAmt: 31200,
+//   },
+//   cgstRate: 1.5,
+//   sgstRate: 1.5,
+//   igstRate: 0.3,
+//   roundOff: 0,
+//   amountInWords: "One Lakh Ninety Three Thousand Three Hundred Eighty Eight Only",
+//   termsAndConditions: [
+//     "The purchaser is confirmed has required as certified by Hallmark Specification - 916bit.",
+//     "Diamonds are certified by recognized and accredited independent gemological laboratory.",
+//     "Tax amount does not add a tax extra certification unless otherwise specified for old and new.",
+//     "Secondary checking of all damaged or worn-out items requires certification before a return/replacement.",
+//   ],
+// };
 
 // ── Helpers ────────────────────────────────────────────
 const fmt = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2 });
 const fmtN = (n: number) => n.toFixed(2);
-
-const grossWeight = invoice.items.reduce((s, i) => s + i.grossWtG, 0);
-const subTotal = invoice.items.reduce((s, i) => s + i.taxableAmt, 0);
-const cgst = Math.round((subTotal * invoice.cgstRate) / 100 * 100) / 100;
-const sgst = Math.round((subTotal * invoice.sgstRate) / 100 * 100) / 100;
-const igst = Math.round((subTotal * invoice.igstRate) / 100 * 100) / 100;
-const totalTax = cgst + sgst + igst;
-const invoiceValue = subTotal + totalTax;
-const grandTotal = invoiceValue + invoice.roundOff - (invoice.oldGoldExchange?.taxableAmt ?? 0);
 
 // ── Table header cell ──────────────────────────────────
 const TH = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
@@ -159,10 +148,42 @@ const TD = ({ children, className = "" }: { children: React.ReactNode; className
 );
 
 // ── Main Component ─────────────────────────────────────
-export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
+export default function GSTInvoice({ data }: { data?: InvoiceData }) {
   const printRef = useRef<HTMLDivElement>(null);
+  const [shopDetails, setShopDetails] = useState<ISHOP | null>(null);
+
+  useEffect(() => {
+    const fetchShop = async () => {
+      try {
+        const response = await axios.get("/api/get-shop");
+        if (response.data.success) {
+          setShopDetails(response.data.shop);
+          console.log("Fetched shop details: ",response.data.shop);
+          
+        }
+      } catch (error) {
+        console.error("Failed to fetch shop details:", error);
+      }
+    };
+    fetchShop();
+  }, []);
+
+if (!data) {
+  return null;
+}
+
+const grossWeight = data.items.reduce((s, i) => s + i.weight, 0);
+const subTotal = data.items.reduce((s, i) => s + (i.type === "Gold" ? (data.shopDetails?.goldRatePer10g ?? 0)*i.weight/10 : (data.shopDetails?.silverRatePerKg ?? 0)*i.weight/1000), 0);
+const cgst = Math.round((subTotal * (data.shopDetails?.cgst ?? data.shopDetails?.cgst ?? 0)) / 100 * 100) / 100;
+const sgst = Math.round((subTotal * (data.shopDetails?.sgst ?? 0)) / 100 * 100) / 100;
+const igst = Math.round((subTotal * (data.shopDetails?.igst ?? 0)) / 100 * 100) / 100;
+const totalTax = cgst + sgst + igst;
+const invoiceValue = subTotal + totalTax;
+const grandTotal = invoiceValue - (data.oldItems?.reduce((s, i) => s + i.price, 0) ?? 0);
 
   const handlePrint = () => window.print();
+
+  const LogoUri = 'https://res.cloudinary.com/dorvotkgw/image/upload/q_auto/f_auto/v1776316298/Logo_nexmij.jpg';
 
   return (
     <div className="min-h-screen  flex flex-col items-center gap-6">
@@ -197,11 +218,11 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
               className="w-[72px] h-[72px] rounded-full flex items-center justify-center flex-shrink-0"
               style={{ background: "linear-gradient(135deg, #6B1A1A 0%, #3A0F0F 100%)", border: "2px solid #8B6914" }}
             >
-             <img src="./Logo.jpeg" alt="" className="w-full h-full rounded-full object-cover" />
+             <img src={LogoUri} alt="" className="w-full h-full rounded-full object-cover" />
             </div>
             <div>
               <p style={{ fontFamily: "'Georgia', serif", fontSize: "22px", fontWeight: 800, color: "#4A1A1A", letterSpacing: "0.04em" }}>
-                {data.shopName}
+                {data.shopDetails?.name || "SRI LAKHHI JEWELLERS"}
               </p>
               {/* <p style={{ fontFamily: "'Georgia', serif", fontSize: "11px", color: "#8B6914", letterSpacing: "0.1em" }}>
                 {data.shopTagline}
@@ -211,6 +232,12 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
 
           {/* Right: TAX INVOICE label + shop info */}
           <div className="text-right">
+            <p style={{ fontFamily: "'Georgia', serif", fontSize: "10px", color: "#5C4A3A" }}>
+                Invoice No.: <span className="font-semibold text-[#2C1A0E]">{data.invoiceNo}</span>
+              </p>
+              <p style={{ fontFamily: "'Georgia', serif", fontSize: "10px", color: "#5C4A3A" }}>
+                Date: <span className="font-semibold text-[#2C1A0E]">{data.date}</span>
+              </p>
             <p style={{ fontFamily: "'Georgia', serif", fontSize: "20px", fontWeight: 800, color: "#4A1A1A", letterSpacing: "0.06em" }}>
               TAX INVOICE
             </p>
@@ -218,9 +245,11 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
               GST INVOICE
             </p>
             <div className="mt-2" style={{ fontFamily: "'Georgia', serif", fontSize: "10px", color: "#5C4A3A", lineHeight: "1.7" }}>
-              <p>{data.shopAddress}</p>
-              <p>GSTIN: {data.gstin}</p>
-              <p>Mobile: {data.mobile}</p>
+              <p>{data.shopDetails?.address}</p>
+              <p>GSTIN: {data.shopDetails?.gstin}</p>
+              <p>AC/NO: {data.shopDetails?.accountNumber}</p>
+              <p>IFSC Code: {data.shopDetails?.ifscCode}</p>
+              <p>Mobile: {data.shopDetails?.contactNumber}</p>
               {/* <p>Web: {data.web}</p> */}
             </div>
           </div>
@@ -259,9 +288,9 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
               Customer Details
             </p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-0.5" style={{ fontFamily: "'Georgia', serif", fontSize: "10px", color: "#5C4A3A" }}>
-              <p>Name: <span className="font-semibold text-[#2C1A0E]">{data.recipient.name}</span></p>
-              <p className="col-span-2">Address: <span className="font-semibold text-[#2C1A0E]">{data.recipient.address}</span></p>
-              <p>Mobile: <span className="font-semibold text-[#2C1A0E]">{data.recipient.mobile}</span></p>
+              <p>Name: <span className="font-semibold text-[#2C1A0E]">{data.customer?.name}</span></p>
+              <p className="col-span-2">Address: <span className="font-semibold text-[#2C1A0E]">{data.customer?.adress}</span></p>
+              <p>Mobile: <span className="font-semibold text-[#2C1A0E]">{data.customer?.phone}</span></p>
             </div>
           </div>
         </div>
@@ -294,17 +323,17 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
             </tr>
           </thead>
           <tbody>
-            {data.items.map((item) => (
-              <tr key={item.sno} className="hover:bg-[#FAF6F1]/60">
-                <TD className="text-center">{item.sno}</TD>
-                <TD className="font-semibold">{item.description}</TD>
-                <TD className="text-center">{item.hsnCode}</TD>
+            {data.items.map((item, index) => (
+              <tr key={index} className="hover:bg-[#FAF6F1]/60">
+                <TD className="text-center">{index + 1}</TD>
+                <TD className="font-semibold">{item.name}</TD>
+                <TD className="text-center">{item.hsn}</TD>
                 <TD className="text-center">{item.purity}</TD>
-                <TD className="text-right">{fmtN(item.grossWtG)}</TD>
-                <TD className="text-right">{fmtN(item.netWtG)}</TD>
-                <TD className="text-right">{item.ratePerG > 0 ? item.ratePerG.toLocaleString("en-IN") : "—"}</TD>
-                <TD className="text-right">{item.makingCharges.toLocaleString("en-IN")}</TD>
-                <TD className="text-right font-semibold">{item.taxableAmt.toLocaleString("en-IN")}</TD>
+                <TD className="text-right">{fmtN(item.weight)}</TD>
+                <TD className="text-right">{item.huid}</TD>
+                <TD className="text-right">{item.type === "Gold" ? ((data.shopDetails?.goldRatePer10g ?? 0)/10).toLocaleString("en-IN") : ((data.shopDetails?.silverRatePerKg ?? 0)/1000).toLocaleString("en-IN")}</TD>
+                <TD className="text-right">{item?.makingCharge?.toLocaleString("en-IN")}</TD>
+                <TD className="text-right font-semibold">{item.type === "Gold" ? (((data.shopDetails?.goldRatePer10g ?? 0)/10)*item.weight + (item.makingCharge ?? 0)).toLocaleString("en-IN") : (((data.shopDetails?.silverRatePerKg ?? 0)/1000)*item.weight + (item.makingCharge ?? 0)).toLocaleString("en-IN")}</TD>
               </tr>
             ))}
             {/* Gross weight row */}
@@ -332,12 +361,13 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
                 Grand Total (In Figures): <span style={{ color: "#8B6914" }}>{fmt(grandTotal)}</span>
               </p>
               <p style={{ fontFamily: "'Georgia', serif", fontSize: "10px", color: "#5C4A3A", lineHeight: "1.6" }}>
-                <span style={{ fontWeight: 700, color: "#4A1A1A" }}>Grand Total (In Words):</span> {data.amountInWords}
+                <span style={{ fontWeight: 700, color: "#4A1A1A" }}>Grand Total (In Words):</span> 
+                {toCurrency(grandTotal, { localeCode: "en-IN" })}
               </p>
             </div>
 
             {/* Old Gold Exchange */}
-            {data.oldGoldExchange && (
+            {data.oldItems && (
               <div className="mt-4">
                 <p style={{ fontFamily: "'Georgia', serif", fontSize: "10px", fontWeight: 700, color: "#4A1A1A", borderBottom: "1px solid #DDD0C4", paddingBottom: "4px", marginBottom: "6px" }}>
                   Old Gold Exchange
@@ -353,14 +383,22 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
-                    <tr>
-                      <TD className="text-center">{data.oldGoldExchange.item}</TD>
-                      <TD className="text-center">{data.oldGoldExchange.purity}</TD>
-                      <TD className="text-right">{data.oldGoldExchange.weightG}</TD>
-                      <TD className="text-right font-semibold">{data.oldGoldExchange.taxableAmt.toLocaleString("en-IN")}</TD>
+                  {
+                    data.oldItems && (
+                      <tbody>
+                        {
+                          data.oldItems.map((item, idx) => (
+                            <tr key={idx}>
+                      <TD className="text-center">{item.name}</TD>
+                      <TD className="text-center">{item.purity}</TD>
+                      <TD className="text-right">{item.weight}</TD>
+                      <TD className="text-right font-semibold">{item.price.toLocaleString("en-IN")}</TD>
                     </tr>
+                          ))
+                        }
                   </tbody>
+                    )
+                  }
                 </table>
               </div>
             )}
@@ -370,12 +408,11 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
           <div className="w-[240px] flex-shrink-0 border border-[#8B6914]/40">
             {[
               { label: "Sub-Total", value: fmt(subTotal), bold: false },
-              { label: `CGST (${data.cgstRate}%)`, value: fmt(cgst), bold: false },
-              { label: `SGST (${data.sgstRate}%)`, value: fmt(sgst), bold: false },
-              { label: `IGST (${data.igstRate}%)`, value: fmt(igst), bold: false },
+              { label: `CGST (${data.shopDetails?.cgst}%)`, value: fmt(cgst), bold: false },
+              { label: `SGST (${data.shopDetails?.sgst}%)`, value: fmt(sgst), bold: false },
+              { label: `IGST (${data.shopDetails?.igst}%)`, value: fmt(igst), bold: false },
               { label: "Total Tax Amt", value: fmt(totalTax), bold: true },
               { label: "Invoice Value", value: fmt(invoiceValue), bold: false },
-              { label: `Round Off (${invoice.roundOff >= 0 ? "+" : ""}${invoice.roundOff})`, value: fmt(Math.abs(invoice.roundOff)), bold: false },
               { label: "Grand Total", value: fmt(grandTotal), bold: true, highlight: true },
             ].map((row, i) => (
               <div key={i}
@@ -390,23 +427,12 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
             ))}
 
             {/* Right side: Old gold summary */}
-            {data.oldGoldExchange && (
+            {data.oldItems && (
               <div className="px-3 py-2 border-t border-[#8B6914]/40 bg-[#FDF3DC]/60">
-                <div className="flex justify-between">
-                  <span style={{ fontFamily: "'Georgia', serif", fontSize: "9px", color: "#8B6914", fontWeight: 700 }}>Sub-Total</span>
-                  <span style={{ fontFamily: "'Georgia', serif", fontSize: "9px", color: "#3D2B1F" }}>₹1.68</span>
-                </div>
-                <div className="flex justify-between">
-                  <span style={{ fontFamily: "'Georgia', serif", fontSize: "9px", color: "#8B6914", fontWeight: 700 }}>CGST Kumar (5%)</span>
-                  <span style={{ fontFamily: "'Georgia', serif", fontSize: "9px", color: "#3D2B1F" }}></span>
-                </div>
                 <div className="flex justify-between mt-1 pt-1 border-t border-[#DDD0C4]">
                   <span style={{ fontFamily: "'Georgia', serif", fontSize: "10px", color: "#4A1A1A", fontWeight: 700 }}>Net Payment</span>
                   <span style={{ fontFamily: "'Georgia', serif", fontSize: "10px", color: "#4A1A1A", fontWeight: 700 }}>{fmt(grandTotal)}</span>
                 </div>
-                <p className="mt-2 text-right" style={{ fontFamily: "'Georgia', serif", fontSize: "9px", fontWeight: 700, color: "#4A1A1A", letterSpacing: "0.06em" }}>
-                  For {data.shopName}
-                </p>
               </div>
             )}
           </div>
@@ -420,7 +446,7 @@ export default function GSTInvoice({ data = invoice }: { data?: InvoiceData }) {
               Terms &amp; Conditions
             </p>
             <ol className="list-decimal list-inside space-y-0.5">
-              {data.termsAndConditions.map((t, i) => (
+              {data.shopDetails?.termsAndConditions.split(".").map((t, i) => (
                 <li key={i} style={{ fontFamily: "'Georgia', serif", fontSize: "9px", color: "#6B5040", lineHeight: "1.5" }}>
                   {t}
                 </li>

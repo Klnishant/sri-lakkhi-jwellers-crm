@@ -1,7 +1,7 @@
 import mongoose, { Document, ObjectId, Schema } from "mongoose";
 
 export interface IProduct extends Document {
-  orderId: ObjectId;
+  orderId?: ObjectId;
   name: string;
   description: string;
   weight: number;
@@ -10,8 +10,8 @@ export interface IProduct extends Document {
   type: "Gold" | "Silver" | "Other";
   purity: "18k" | "22k" | "24k" | "Other";
   huid: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const ProductSchema: Schema = new Schema<IProduct>(

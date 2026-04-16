@@ -34,11 +34,6 @@ const OrderSchema: Schema = new Schema<IOrder>(
       },
     ],
     totalAmount: { type: Number, required: true },
-    status: {
-      type: String,
-      enum: ["Pending", "Processing", "Completed", "Cancelled"],
-      default: "Pending",
-    },
     grossWeight: { type: Number, required: true },
     customDuty: { type: Number, required: true },
     sgst: { type: Number, required: true },

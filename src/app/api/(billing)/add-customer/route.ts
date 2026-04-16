@@ -23,6 +23,10 @@ export async function POST(request: Request){
 
         const newCustomer = new CustomerModel({ ...body });
         const savedCustomer = await newCustomer.save();
+
+        if (!savedCustomer) {
+            return new Response(JSON.stringify({ success: false, message: "Failed to add customer." }), { status: 500 });
+        }
         return new Response(JSON.stringify({ success: true, savedCustomer, message: "Customer added successfully." }), { status: 201 });
     } catch (error: any) {
         console.error("Error adding customer:", error?.message);

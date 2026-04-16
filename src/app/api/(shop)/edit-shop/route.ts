@@ -8,6 +8,8 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json();
 
+    log("Received shop details:", body);
+
     const shop = await Shop.findOne().sort({ createdAt: -1 });
 
     if (!shop) {
@@ -18,7 +20,12 @@ export async function PATCH(req: Request) {
         !body.contactNumber ||
         !body.email ||
         !body.goldRatePer10g ||
-        !body.silverRatePerKg
+        !body.silverRatePerKg ||
+        !body.sgst ||
+        !body.cgst ||
+        !body.igst ||
+        !body.customDuty ||
+        !body.gstOnMakingCharge
       ) {
         return Response.json(
           { success: false, message: "All fields are required." },
@@ -32,8 +39,15 @@ export async function PATCH(req: Request) {
         address: body.address,
         contactNumber: body.contactNumber,
         email: body.email,
+        accountNumber: body.accountNumber || "",
+        ifscCode: body.ifscCode || "",
         goldRatePer10g: parseCurrency(body.goldRatePer10g),
         silverRatePerKg: parseCurrency(body.silverRatePerKg),
+        sgst: parseCurrency(body.sgst),
+        cgst: parseCurrency(body.cgst),
+        igst: parseCurrency(body.igst),
+        customDuty: parseCurrency(body.customDuty),
+        gstOnMakingCharge: parseCurrency(body.gstOnMakingCharge),
         termsAndConditions: body.termsAndConditions || "",
       });
       const savedShop = await newShop.save();

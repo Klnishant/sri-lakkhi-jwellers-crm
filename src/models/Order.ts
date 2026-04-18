@@ -1,4 +1,5 @@
 import mongoose, { Schema, ObjectId, Document } from "mongoose";
+import { IProduct } from "./OldProduct";
 
 export interface IOrder extends Document {
   customerId: ObjectId;
@@ -16,6 +17,18 @@ export interface IOrder extends Document {
   gstOnMakingCharge: number;
   discount: number;
   totalPayableAmmount: number;
+  invoiceNumber: string;
+  invoiceUrl: string;
+  oldProducts: {
+    name: string;
+    description: string;
+    weight: number;
+    price: number;
+    quantity: number;
+    type: "Gold" | "Silver" | "Other";
+    purity: "18k" | "22k" | "24k" | "Other";
+    huid: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,8 +53,26 @@ const OrderSchema: Schema = new Schema<IOrder>(
     cgst: { type: Number, required: true },
     igst: { type: Number, required: true },
     gstOnMakingCharge: { type: Number, required: true },
-    discount: { type: Number, required: true },
+    discount: { type: Number },
     totalPayableAmmount: { type: Number, required: true },
+    invoiceNumber: { type: String, required: true },
+    invoiceUrl: { type: String, required: true },
+    oldProducts: [
+      {
+        name: { type: String, required: true },
+        description: { type: String },
+        weight: { type: Number, required: true },
+        price: { type: Number, required: true },
+        quantity: { type: Number },
+        type: { type: String, enum: ["Gold", "Silver", "Other"], required: true },
+        purity: {
+          type: String,
+          enum: ["18k", "22k", "24k", "Other"],
+          required: true,
+        },
+        huid: { type: String },
+      },
+    ],
   },
   { timestamps: true },
 );

@@ -1,12 +1,12 @@
 import mongoose, { Document, ObjectId, Schema } from "mongoose";
 
 export interface IProduct extends Document {
-  orderId?: ObjectId;
+  inVoiceNo: string;
   name: string;
   description: string;
   weight: number;
   price: number;
-  stock: number;
+  quantity: number;
   type: "Gold" | "Silver" | "Other";
   purity: "18k" | "22k" | "24k" | "Other";
   huid: string;
@@ -16,12 +16,12 @@ export interface IProduct extends Document {
 
 const ProductSchema: Schema = new Schema<IProduct>(
   {
-    orderId: { type: Schema.Types.ObjectId, ref: "Order", required: true },
+    inVoiceNo: { type: String, required: true },
     name: { type: String, required: true },
     description: { type: String },
     weight: { type: Number, required: true },
     price: { type: Number, required: true },
-    stock: { type: Number, required: true },
+    quantity: { type: Number},
     type: { type: String, enum: ["Gold", "Silver", "Other"], required: true },
     purity: {
       type: String,
@@ -33,8 +33,8 @@ const ProductSchema: Schema = new Schema<IProduct>(
   { timestamps: true },
 );
 
-const ProductModel =
-  (mongoose.models.Product as mongoose.Model<IProduct>) ||
-  mongoose.model<IProduct>("Product", ProductSchema);
+const OldProductModel =
+  (mongoose.models.OldProduct as mongoose.Model<IProduct>) ||
+  mongoose.model<IProduct>("OldProduct", ProductSchema);
 
-export default ProductModel;
+export default OldProductModel;

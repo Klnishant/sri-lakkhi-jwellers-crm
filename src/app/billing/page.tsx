@@ -122,6 +122,7 @@ function BillingMainSection() {
   const [openOldProduct, setOpenOldProduct] = useState(false);
   const [data, setData] = useState<InvoiceData | null>(null);
   const [shopDetails, setShopDetails] = useState<ISHOP | null>(null);
+  const [finalizing, setFinalizing] = useState(false);
 
   const [items, setItems] = useState<LineItem[]>([
     {
@@ -140,9 +141,27 @@ function BillingMainSection() {
     },
   ]);
 
-  const subtotal = items.reduce((sum, i) => sum + i.rate, 0);
-  const tax = Math.round(subtotal * TAX_RATE);
-  const total = subtotal + tax;
+  const grossWeight = selectedItems.reduce((s, i) => s + i.weight, 0);
+  const subTotal = selectedItems.reduce(
+    (s, i) =>
+      s +
+      (i.type === "Gold"
+        ? ((shopDetails?.goldRatePer10g ?? 0) * i.weight) / 10
+        : ((shopDetails?.silverRatePerKg ?? 0) * i.weight) / 1000),
+    0,
+  );
+  const cgst =
+    Math.round(
+      ((subTotal * (shopDetails?.cgst ?? shopDetails?.cgst ?? 0)) / 100) * 100,
+    ) / 100;
+  const sgst =
+    Math.round(((subTotal * (shopDetails?.sgst ?? 0)) / 100) * 100) / 100;
+  const igst =
+    Math.round(((subTotal * (shopDetails?.igst ?? 0)) / 100) * 100) / 100;
+  const totalTax = cgst + sgst + igst;
+  const invoiceValue = subTotal + totalTax;
+  const grandTotal =
+    invoiceValue - (oldProducts?.reduce((s, i) => s + i.price, 0) ?? 0);
   const invoiceDate = new Date().toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
@@ -150,14 +169,20 @@ function BillingMainSection() {
   });
   const invoiceNo = `${new Date().getUTCFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}/${new Date().getTime()}`;
 
-  const removeItem = (id: string) =>{
+  const removeItem = (id: string) => {
     setSelectedItems((prev) => prev.filter((i) => i._id.toString() !== id));
-    setProducts((prev) => prev.map((i) => (i?._id?.toString() === id ? { ...i, stock: (i.stock || 0) + 1 } as IPRODUCTS : i)));
-  }
+    setProducts((prev) =>
+      prev.map((i) =>
+        i?._id?.toString() === id
+          ? ({ ...i, stock: (i.stock || 0) + 1 } as IPRODUCTS)
+          : i,
+      ),
+    );
+  };
 
-  const removeOldItem = (idx: number) =>{
-    setOldProducts((prev) => prev.filter((_,i) => i !== i));
-  }
+  const removeOldItem = (idx: number) => {
+    setOldProducts((prev) => prev.filter((_, i) => i !== i));
+  };
 
   useEffect(() => {
     const fetchShop = async () => {
@@ -165,8 +190,7 @@ function BillingMainSection() {
         const response = await axios.get("/api/get-shop");
         if (response.data.success) {
           setShopDetails(response.data.shop);
-          console.log("Fetched shop details: ",response.data.shop);
-          
+          console.log("Fetched shop details: ", response.data.shop);
         }
       } catch (error) {
         console.error("Failed to fetch shop details:", error);
@@ -205,15 +229,15 @@ function BillingMainSection() {
   };
 
   useEffect(() => {
-      setData({
-        invoiceNo: invoiceNo,
-        date: invoiceDate,
-        customer: client,
-        items: selectedItems,
-        oldItems: oldProducts,
-        shopDetails: shopDetails,
-      });
-  }, [client, selectedItems, oldProducts,shopDetails]);
+    setData({
+      invoiceNo: invoiceNo,
+      date: invoiceDate,
+      customer: client,
+      items: selectedItems,
+      oldItems: oldProducts,
+      shopDetails: shopDetails,
+    });
+  }, [client, selectedItems, oldProducts, shopDetails]);
 
   const handleDownload = async () => {
     if (!data) return;
@@ -251,6 +275,53 @@ function BillingMainSection() {
       newTab.document.write(`
     <iframe src="${url}" style="width:100%;height:100%"></iframe>
   `);
+    }
+  };
+
+  const handleFinalize = async () => {
+    if (!data) return;
+    setFinalizing(true);
+
+    try {
+      const html = generateHTML(data);
+
+      const body = {
+        customerDetails: client,
+        items: selectedItems,
+        olditems: oldProducts,
+        billingDetails: {
+          invoiceNumber: invoiceNo,
+          invoiceDate: invoiceDate,
+          grossWeight,
+          subTotal,
+          ...shopDetails,
+          totalTax,
+          invoiceValue,
+          grandTotal,
+        },
+        html,
+      };
+      const res = await axios.post("/api/create-bill", body);
+      if (res.data.success) {
+        
+        //const resData = await res.json();
+
+        console.log(res);
+        
+
+        const url = res?.data?.data
+
+        //console.log("resData: ", resData);
+        console.log("url: ",url);
+        
+        
+
+        window.open(res.data.data, "_blank");
+      }
+    } catch (error: any) {
+      console.error("Error finalizing bill:", error.message);
+    } finally {
+      setFinalizing(false);
     }
   };
 
@@ -390,15 +461,15 @@ function BillingMainSection() {
 
           {/* 🔽 DROPDOWN */}
           {open && (
-            <div className="mb-4 bg-white border border-[#EADFCF] rounded-md shadow-md p-3">
+            <div className="mb-4 bg-[#FAF6F1] border border-[#EADFCF] rounded-md shadow-md p-3">
               {/* SEARCH */}
               <div className="flex items-center gap-2 border-b pb-2 mb-2">
-                <Search size={14} />
+                <Search size={14} className="text-[#b8a898]" />
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name or ID..."
-                  className="w-full outline-none text-sm"
+                  className="w-full outline-none text-sm placeholder:text-[#b8a898]"
                   style={{ fontFamily: "'Georgia', serif" }}
                 />
               </div>
@@ -415,13 +486,23 @@ function BillingMainSection() {
                       key={p._id.toString()}
                       onClick={() => {
                         setSelectedItems((prev) => [p, ...prev]);
-                        if(p?.stock>=1){
-                          setProducts((prev) => prev.map((i) => (i?._id?.toString() === p?._id?.toString() ? { ...i, stock: i?.stock - 1 } as IPRODUCTS : i)));
+                        if (p?.stock >= 1) {
+                          setProducts((prev) =>
+                            prev.map((i) =>
+                              i?._id?.toString() === p?._id?.toString()
+                                ? ({ ...i, stock: i?.stock - 1 } as IPRODUCTS)
+                                : i,
+                            ),
+                          );
                         }
-                        if(p?.stock<=1){
-                          setProducts((prev) => prev.filter((i) => i?._id?.toString() !== p?._id?.toString()));
+                        if (p?.stock <= 1) {
+                          setProducts((prev) =>
+                            prev.filter(
+                              (i) => i?._id?.toString() !== p?._id?.toString(),
+                            ),
+                          );
                         }
-                        
+
                         setOpen(false);
                       }}
                       className="px-3 py-2 hover:bg-[#FFF0F1] rounded cursor-pointer transition"
@@ -504,9 +585,11 @@ function BillingMainSection() {
 
                   <button
                     onClick={() => {
-                      removeItem(item?._id.toString())
-                      if(item?.stock===1){
-                        setProducts((prev) => [...(prev || []), item] as IPRODUCTS[]);
+                      removeItem(item?._id.toString());
+                      if (item?.stock === 1) {
+                        setProducts(
+                          (prev) => [...(prev || []), item] as IPRODUCTS[],
+                        );
                       }
                     }}
                     className="text-[#C0392B] hover:text-[#96281B]"
@@ -530,7 +613,7 @@ function BillingMainSection() {
             </p>
           </div>
           <div className="flex flex-col gap-3">
-            {oldProducts?.map((item: IProduct,idx) => (
+            {oldProducts?.map((item: IProduct, idx) => (
               <div
                 key={item?._id?.toString() ?? idx}
                 className="bg-[#FFF0F1] rounded-md px-5 py-4 flex items-start justify-between"
@@ -571,7 +654,7 @@ function BillingMainSection() {
 
                   <button
                     onClick={() => {
-                      removeOldItem(idx)
+                      removeOldItem(idx);
                     }}
                     className="text-[#C0392B] hover:text-[#96281B]"
                   >
@@ -600,6 +683,8 @@ function BillingMainSection() {
         {/* Action Buttons */}
         <div className="flex gap-3 mt-2">
           <button
+            onClick={handleFinalize}
+            disabled={finalizing}
             className="flex-1 bg-[#6B1A1A] hover:bg-[#521414] text-white py-4 rounded-md tracking-[0.06em] transition-colors duration-200"
             style={{
               fontFamily: "'Georgia', serif",
@@ -607,7 +692,7 @@ function BillingMainSection() {
               fontWeight: 500,
             }}
           >
-            Finalize Bill
+            { finalizing ? "Finalizing..." : "Finalize Bill" }
           </button>
         </div>
       </div>
@@ -676,9 +761,7 @@ function BillingMainSection() {
 
         {/* Invoice Card */}
         {/* <InvoiceTemplate data={data} /> */}
-        {
-          data && <GSTInvoice data={data} />
-        }
+        {data && <GSTInvoice data={data} />}
       </div>
     </div>
   );

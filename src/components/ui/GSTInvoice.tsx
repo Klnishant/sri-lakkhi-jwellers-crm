@@ -221,8 +221,8 @@ const grandTotal = invoiceValue - (data.oldItems?.reduce((s, i) => s + i.price, 
              <img src={LogoUri} alt="" className="w-full h-full rounded-full object-cover" />
             </div>
             <div>
-              <p style={{ fontFamily: "'Georgia', serif", fontSize: "22px", fontWeight: 800, color: "#4A1A1A", letterSpacing: "0.04em" }}>
-                {data.shopDetails?.name || "SRI LAKHHI JEWELLERS"}
+              <p style={{ fontFamily: "'Georgia', serif", fontSize: "30px", fontWeight: 800, color: "#4A1A1A", letterSpacing: "0.04em" }}>
+                {data.shopDetails?.name || "SRI LAKKHI JEWELLERS"}
               </p>
               {/* <p style={{ fontFamily: "'Georgia', serif", fontSize: "11px", color: "#8B6914", letterSpacing: "0.1em" }}>
                 {data.shopTagline}

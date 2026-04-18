@@ -7,12 +7,18 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
 
-        if(!body.customerId || !body.products || !body.totalAmount || !body.grossWeight || !body.customDuty || !body.sgst || !body.cgst || !body.igst || !body.gstOnMakingCharge || !body.discount || !body.totalPayableAmmount) {
+        console.log("Order body: ",body);
+        
+
+        if(!body.customerId || !body.products || !body.totalAmount || !body.grossWeight || !body.customDuty || !body.sgst || !body.cgst || !body.igst || !body.gstOnMakingCharge || !body.totalPayableAmmount || !body.invoiceNumber || !body.invoiceUrl) {
             return new Response(JSON.stringify({ success: false, message: "Missing required fields." }), { status: 400 });
         }
         const newOrder = new Order({
-            customerId: body.customerId,
-            products: body.products,
+            customerId: body.customerId.toObjectId(),
+            products: body.products.map((item: any) => ({
+                productId: item.productId.toObjectId(),
+                quantity: 1,
+            })),
             totalAmount: body.totalAmount,
             grossWeight: body.grossWeight,
             customDuty: body.customDuty,
@@ -20,8 +26,11 @@ export async function POST(req: Request) {
             cgst: body.cgst,
             igst: body.igst,
             gstOnMakingCharge: body.gstOnMakingCharge,
-            discount: body.discount,
+            discount: body.discount || 0,
             totalPayableAmmount: body.totalPayableAmmount,
+            invoiceNumber: body.invoiceNumber,
+            invoiceUrl: body.invoiceUrl,
+            oldProducts: body.oldProducts || [],
         });
 
         const savedOrder = await newOrder.save();

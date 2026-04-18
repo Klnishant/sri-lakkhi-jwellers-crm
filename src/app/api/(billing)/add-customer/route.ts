@@ -15,7 +15,7 @@ export async function POST(request: Request){
         if (customer) {
             const updatedCustomer = await CustomerModel.findByIdAndUpdate(customer._id, { ...body }, { new: true });
             if (updatedCustomer) {
-                return new Response(JSON.stringify({ success: true, updatedCustomer, message: "Customer updated successfully." }), { status: 200 });
+                return new Response(JSON.stringify({ success: true, data:updatedCustomer, message: "Customer updated successfully." }), { status: 200 });
             } else {
                 return new Response(JSON.stringify({ success: false, message: "Failed to update customer." }), { status: 500 });
             }
@@ -27,7 +27,7 @@ export async function POST(request: Request){
         if (!savedCustomer) {
             return new Response(JSON.stringify({ success: false, message: "Failed to add customer." }), { status: 500 });
         }
-        return new Response(JSON.stringify({ success: true, savedCustomer, message: "Customer added successfully." }), { status: 201 });
+        return new Response(JSON.stringify({ success: true, data:savedCustomer, message: "Customer added successfully." }), { status: 201 });
     } catch (error: any) {
         console.error("Error adding customer:", error?.message);
         return new Response(JSON.stringify({ success: false, message: "Failed to add customer." }), { status: 500 });

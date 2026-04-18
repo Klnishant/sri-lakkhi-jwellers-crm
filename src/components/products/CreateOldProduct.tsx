@@ -163,8 +163,6 @@ export default function CreateOldProductModal({ onClose, onSave }: CreateProduct
       e.weight = "Enter a valid weight.";
     if (!form.price || isNaN(Number(form.price)) || Number(form.price) <= 0)
       e.price = "Enter a valid price.";
-    if (!form.stock || isNaN(Number(form.stock)) || Number(form.stock) < 0)
-      e.stock = "Enter valid stock.";
     if (!form.type) e.type = "Select a type.";
     if (!form.purity) e.purity = "Select purity.";
     setErrors(e);
@@ -321,16 +319,6 @@ export default function CreateOldProductModal({ onClose, onSave }: CreateProduct
           <div>
             <SectionTitle>Inventory & Certification</SectionTitle>
             <div className="grid grid-cols-2 gap-4">
-              <FieldWrapper label="Stock Quantity" required error={errors.stock}>
-                <InputField
-                  icon={<Package size={15} strokeWidth={1.6} />}
-                  placeholder="e.g. 5"
-                  value={form.stock}
-                  onChange={(v) => set("stock", v)}
-                  type="number"
-                  hasError={!!errors.stock}
-                />
-              </FieldWrapper>
 
               <FieldWrapper label="HUID (Hallmark Unique ID)" error={errors.huid}>
                 <InputField

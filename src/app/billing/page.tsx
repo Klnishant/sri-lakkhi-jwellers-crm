@@ -205,7 +205,7 @@ function BillingMainSection() {
 
       try {
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASE_URL}get-product?limit=${5}&search=${search}`,
+          `/api/get-product?limit=${5}&search=${search}`,
         );
 
         if (response.data.success) {

@@ -180,7 +180,7 @@ export default function CreateProductModal({ onClose, onSave }: CreateProductMod
       setSubmitted(true);
       
       try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}add-product`, {
+        const response = await axios.post(`/api/add-product`, {
           name: form.name,
           description: form.description,
           weight: Number(form.weight),

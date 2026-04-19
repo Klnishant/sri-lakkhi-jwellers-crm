@@ -198,7 +198,7 @@ export default function EditProductModal({ onClose, onSave, product }: CreatePro
       setSubmitted(true);
       
       try {
-        const response = await axios.patch(`${process.env.NEXT_PUBLIC_BASE_URL}edit-product/${product?._id}`, {
+        const response = await axios.patch(`/api/edit-product/${product?._id}`, {
           name: form.name,
           description: form.description,
           weight: Number(form.weight),

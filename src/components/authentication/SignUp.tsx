@@ -99,7 +99,7 @@ export default function SignupPage() {
         <div className="absolute bottom-[25%] right-[5%] w-56 h-56 rounded-full bg-[#C9A84C]/8 blur-2xl pointer-events-none" />
 
         {/* Top marquee */}
-        <div className="relative z-10 overflow-hidden">
+        {/* <div className="relative z-10 overflow-hidden">
           <p
             className="text-[#C9A84C] tracking-[0.45em] whitespace-nowrap animate-marquee"
             style={{
@@ -110,13 +110,13 @@ export default function SignupPage() {
           >
             LAKHHI JEWELLERS &nbsp;&nbsp;&nbsp; LAKHHI JEWELLERS &nbsp;&nbsp;&nbsp; LAKHHI JEWELLERS
           </p>
-        </div>
+        </div> */}
 
         {/* Centre decorative emblem */}
         <div className="relative z-10 flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-6">
             {/* SVG Floral Emblem */}
-            <div
+            {/* <div
               className="w-[140px] h-[140px] rounded-full flex items-center justify-center"
               style={{ background: "linear-gradient(135deg, #5C1A1A 0%, #3A0F0F 100%)", border: "2px solid #8B6914" }}
             >
@@ -138,10 +138,10 @@ export default function SignupPage() {
                 <circle cx="40" cy="40" r="7" fill="#C9A84C" />
                 <circle cx="40" cy="40" r="3.5" fill="#5C1A1A" />
               </svg>
-            </div>
+            </div> */}
 
             {/* Brand text below emblem */}
-            <div className="text-center">
+            {/* <div className="text-center">
               <p
                 className="text-[#C9A84C] tracking-[0.3em] uppercase mb-2"
                 style={{ fontFamily: "'Georgia', serif", fontSize: "14px", fontWeight: 400 }}
@@ -154,14 +154,14 @@ export default function SignupPage() {
               >
                 Excellence in Heritage Since 1924
               </p>
-            </div>
+            </div> */}
 
             {/* Decorative gold divider */}
-            <div className="flex items-center gap-3 mt-2">
+            {/* <div className="flex items-center gap-3 mt-2">
               <div className="w-16 h-px bg-[#C9A84C]/40" />
               <div className="w-1.5 h-1.5 rounded-full bg-[#C9A84C]/60" />
               <div className="w-16 h-px bg-[#C9A84C]/40" />
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -189,14 +189,14 @@ export default function SignupPage() {
           </p>
 
           {/* Bottom marquee */}
-          <div className="overflow-hidden mt-6">
+          {/* <div className="overflow-hidden mt-6">
             <p
               className="text-white/15 tracking-[0.3em] whitespace-nowrap animate-marquee-slow"
               style={{ fontFamily: "'Georgia', serif", fontSize: "clamp(12px, 1.6vw, 18px)" }}
             >
               TRUST &nbsp; CRAFT &nbsp; LEGACY &nbsp;&nbsp;&nbsp; TRUST &nbsp; CRAFT &nbsp; LEGACY &nbsp;&nbsp;&nbsp; TRUST &nbsp; CRAFT &nbsp; LEGACY
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Gold corner accent */}

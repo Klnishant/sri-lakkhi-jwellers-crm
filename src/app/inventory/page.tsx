@@ -156,7 +156,7 @@ function MainSection() {
 
       try {
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASE_URL}get-product?page=${currentPage}&limit=${limit}&search=${search}`,
+          `/api/get-product?page=${currentPage}&limit=${limit}&search=${search}`,
         );
 
         if (response.data.success) {
@@ -204,7 +204,7 @@ function MainSection() {
 
     try {
       const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_BASE_URL}delete-product/${id}`,
+        `/api/delete-product/${id}`,
       );
       if (response?.data?.success) {
         setProducts((prevProducts) => {

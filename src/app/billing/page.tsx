@@ -94,7 +94,7 @@ function FormInput({
 export function generateHTML(data: InvoiceData) {
   return `
     <html>
-    <link rel="stylesheet" href="http://localhost:3000/invoice.min.css" />
+    <link rel="stylesheet" href="https://sri-lakkhi-jwellers-crm.vercel.app/invoice.min.css" />
       <head>
         <style>
           @page { size: A4; }

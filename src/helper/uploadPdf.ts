@@ -4,10 +4,10 @@ export async function uploadPDF(pdfBuffer: Buffer) {
   return new Promise((resolve, reject) => {
     cloudinary.uploader.upload_stream(
       {
-        resource_type: "raw", // 🔥 important for PDF
+        resource_type: "raw",
         folder: "invoices",
-        public_id: `invoice_${Date.now()}.pdf`, // 👈 IMPORTANT,
-        type: "upload",
+        public_id: `invoice_${Date.now()}`,
+        format: "pdf", // ✅ IMPORTANT
       },
       (error, result) => {
         if (error) reject(error);

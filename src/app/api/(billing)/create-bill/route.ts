@@ -56,16 +56,6 @@ export async function POST(req: Request) {
     console.log("PDF URL", pdfUrl);
 
     
-
-const signedUrl = cloudinary.url(
-  pdfUrl?.secure_url || "",
-  {
-    resource_type: "raw",
-    type: "upload",
-    sign_url: true,
-  }
-);
-    
     const orderData = {
       customerId: customerDetailsObj.data._id,
       products: body.items,
@@ -105,7 +95,7 @@ const signedUrl = cloudinary.url(
     }
     console.log("Order Object: ", orderObject);
 
-    return new Response(JSON.stringify({ success: true, data:signedUrl, message: "Order created successfully." }), { status: 201 });
+    return new Response(JSON.stringify({ success: true, data:pdfUrl?.secure_url, message: "Order created successfully." }), { status: 201 });
   } catch (error: any) {
     console.error("Error creating bill:", error);
     return new Response(

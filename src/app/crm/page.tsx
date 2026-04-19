@@ -2,10 +2,11 @@
 
 import Footer from "@/src/components/core/Footer";
 import NavBar from "@/src/components/core/NavBar";
-import { MessageSquare, Landmark, Megaphone, PartyPopper, ChevronRight } from "lucide-react";
+import UserManagement from "@/src/components/ui/UserManagement";
+import { MessageSquare, Landmark, Megaphone, PartyPopper, ChevronRight, PhoneOutgoing } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────
-type PaymentStatus = "OVERDUE" | "PENDING";
+type PaymentStatus = "OVERDUE" | "ADVANCE";
 
 type DueEntry = {
   id: string;
@@ -32,7 +33,7 @@ const dueEntries: DueEntry[] = [
     clientSub: "Elite Diamond Tier",
     itemDetails: "Diamond Bangles (22k)",
     balance: 125000,
-    status: "PENDING",
+    status: "ADVANCE",
   },
   {
     id: "3",
@@ -40,7 +41,7 @@ const dueEntries: DueEntry[] = [
     clientSub: "Corporate Client",
     itemDetails: "Custom Signet Ring",
     balance: 85000,
-    status: "PENDING",
+    status: "ADVANCE",
   },
   {
     id: "4",
@@ -57,7 +58,7 @@ const fmt = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 const statusStyles: Record<PaymentStatus, string> = {
   OVERDUE: "bg-[#FADADD] text-[#8B1A1A]",
-  PENDING: "bg-[#FDF3DC] text-[#8B6914]",
+  ADVANCE: "bg-[#FDF3DC] text-[#8B6914]",
 };
 
 // ── Status Badge ───────────────────────────────────────
@@ -95,7 +96,7 @@ function SectionLabel({
 
 // ── Main Component ─────────────────────────────────────
 function CRMMainSection() {
-  const pendingCount = dueEntries.filter((e) => e.status === "OVERDUE" || e.status === "PENDING").length;
+  const pendingCount = dueEntries.filter((e) => e.status === "OVERDUE" || e.status === "ADVANCE").length;
 
   return (
     <div className="min-h-screen bg-[#FFF8F7] px-6 md:px-12 lg:px-16 pt-12 pb-24">
@@ -220,13 +221,13 @@ function CRMMainSection() {
 
             {/* Table Header */}
             <div
-              className="grid px-7 bg-[#F9EAEB] py-4 border-b border-[#E8DDD4]"
-              style={{ gridTemplateColumns: "1.6fr 1.4fr 1fr 100px" }}
+              className="w-full grid grid-cols-4 justify-between px-7 bg-[#F9EAEB] py-4 border-b border-[#E8DDD4]"
+              
             >
-              {["Client Name", "Item Details", "Balance", "Status"].map((h) => (
+              {["Client Name", "Balance", "Status", "Action"].map((h) => (
                 <p
                   key={h}
-                  className={`text-[#9E8A7E] tracking-[0.12em] uppercase ${h === "Balance" || h === "Status" ? "text-right" : ""}`}
+                  className={`text-[#9E8A7E] tracking-[0.12em] uppercase ${h === "Balance" || h === "Status" ? "text-right" : ""} flex items-center justify-center`}
                   style={{ fontFamily: "'Georgia', serif", fontSize: "10px", fontWeight: 600 }}
                 >
                   {h}
@@ -238,46 +239,36 @@ function CRMMainSection() {
             {dueEntries.map((entry, idx) => (
               <div
                 key={entry.id}
-                className={`grid items-center px-7 py-5 hover:bg-[#F5EDE4] transition-colors duration-150 cursor-pointer ${
+                className={`grid grid-cols-4 items-center px-7 py-5 hover:bg-[#F5EDE4] transition-colors duration-150 cursor-pointer ${
                   idx !== dueEntries.length - 1 ? "border-b border-[#EDE4DA]" : ""
                 }`}
-                style={{ gridTemplateColumns: "1.6fr 1.4fr 1fr 100px" }}
               >
                 {/* Client */}
                 <div>
                   <p
-                    className="text-[#4A1A1A] mb-0.5"
+                    className="text-[#4A1A1A] mb-0.5 flex items-center justify-center"
                     style={{ fontFamily: "'Georgia', serif", fontSize: "15px", fontWeight: 700 }}
                   >
                     {entry.clientName}
                   </p>
-                  <p
-                    className="text-[#9E8A7E]"
-                    style={{ fontFamily: "'Georgia', serif", fontSize: "12px" }}
-                  >
-                    {entry.clientSub}
-                  </p>
                 </div>
-
-                {/* Item */}
-                <p
-                  className="text-[#5C4A3A]"
-                  style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
-                >
-                  {entry.itemDetails}
-                </p>
-
                 {/* Balance */}
                 <p
-                  className="text-[#3D2B1F] text-right"
+                  className="text-[#3D2B1F] text-right flex items-center justify-center"
                   style={{ fontFamily: "'Georgia', serif", fontSize: "14px", fontWeight: 600 }}
                 >
                   {fmt(entry.balance)}
                 </p>
 
                 {/* Status */}
-                <div className="flex justify-end">
+                <div className=" flex items-center justify-center">
                   <StatusBadge status={entry.status} />
+                </div>
+                {/* Action */}
+
+                <div className="flex items-center justify-center gap-4">
+                  <PhoneOutgoing size={18} strokeWidth={1.5} className="text-[#8B6914] hover:text-[#5C3D00] transition-colors duration-200" />
+                  <img height="18" width="18" src="https://cdn.simpleicons.org/WhatsApp/25D366" />
                 </div>
               </div>
             ))}
@@ -304,6 +295,7 @@ export default function CRMSection(){
     <main>
       <NavBar />
       <CRMMainSection />
+      <UserManagement />
       <Footer />
     </main>
   )

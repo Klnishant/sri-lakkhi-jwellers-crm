@@ -94,8 +94,8 @@ function FormInput({
 export function generateHTML(data: InvoiceData) {
   return `
     <html>
+    <link rel="stylesheet" href="http://localhost:3000/invoice.min.css" />
       <head>
-        <script src="https://cdn.tailwindcss.com"></script>
         <style>
           @page { size: A4; }
           body { margin: 0; }
@@ -316,7 +316,12 @@ function BillingMainSection() {
         
         
 
-        window.open(res.data.data, "_blank");
+       const newTab = window.open();
+    if (newTab) {
+      newTab.document.write(`
+    <iframe src="${url}" style="width:100%;height:100%"></iframe>
+  `);
+    }
       }
     } catch (error: any) {
       console.error("Error finalizing bill:", error.message);
@@ -580,7 +585,10 @@ function BillingMainSection() {
                       fontWeight: 600,
                     }}
                   >
-                    {fmt(item?.price)}
+                    {fmt(item?.type === "Gold"
+                      ? ((shopDetails?.goldRatePer10g ?? 0) * item.weight) / 10
+                      : ((shopDetails?.silverRatePerKg ?? 0) * item.weight) /
+                        1000)}
                   </span>
 
                   <button
@@ -718,7 +726,7 @@ function BillingMainSection() {
       {/* ══════════════════════════════════════════
           RIGHT PANEL — Live Preview
       ══════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col gap-4">
+      <div className="hidden flex-1 lg:flex flex-col gap-4">
         {/* Preview top bar */}
         <div className="flex items-center justify-between px-1">
           <p

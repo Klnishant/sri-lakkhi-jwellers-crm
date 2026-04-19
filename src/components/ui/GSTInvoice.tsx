@@ -1,4 +1,3 @@
-"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Printer } from "lucide-react";
@@ -184,6 +183,7 @@ const grandTotal = invoiceValue - (data.oldItems?.reduce((s, i) => s + i.price, 
   const handlePrint = () => window.print();
 
   const LogoUri = 'https://res.cloudinary.com/dorvotkgw/image/upload/q_auto/f_auto/v1776316298/Logo_nexmij.jpg';
+  const base64Logo = Logo
 
   return (
     <div className="min-h-screen  flex flex-col items-center gap-6">
@@ -218,7 +218,7 @@ const grandTotal = invoiceValue - (data.oldItems?.reduce((s, i) => s + i.price, 
               className="w-[72px] h-[72px] rounded-full flex items-center justify-center flex-shrink-0"
               style={{ background: "linear-gradient(135deg, #6B1A1A 0%, #3A0F0F 100%)", border: "2px solid #8B6914" }}
             >
-             <img src={LogoUri} alt="" className="w-full h-full rounded-full object-cover" />
+             <img src={Logo.image} alt="" className="w-full h-full rounded-full object-cover" />
             </div>
             <div>
               <p style={{ fontFamily: "'Georgia', serif", fontSize: "30px", fontWeight: 800, color: "#4A1A1A", letterSpacing: "0.04em" }}>
@@ -447,7 +447,7 @@ const grandTotal = invoiceValue - (data.oldItems?.reduce((s, i) => s + i.price, 
             </p>
             <ol className="list-decimal list-inside space-y-0.5">
               {data.shopDetails?.termsAndConditions.split(".").map((t, i) => (
-                <li key={i} style={{ fontFamily: "'Georgia', serif", fontSize: "9px", color: "#6B5040", lineHeight: "1.5" }}>
+                <li key={i} style={{ fontFamily: "'Georgia', serif", fontSize: "9px", color: "#6B5040", lineHeight: "1.5" }} className={`${t.trim() ? "" : "hidden"}`}>
                   {t}
                 </li>
               ))}

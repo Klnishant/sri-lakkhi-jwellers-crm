@@ -8,6 +8,8 @@ import { log } from "console";
 import { success } from "zod";
 import { v2 as cloudinary } from "cloudinary";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   await dbconnect();
 

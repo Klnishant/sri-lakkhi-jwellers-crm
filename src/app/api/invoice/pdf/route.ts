@@ -1,5 +1,7 @@
 import { getBrowser } from "@/src/lib/puppeteer";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   const { html } = await req.json();
 
@@ -18,6 +20,7 @@ export async function POST(req: Request) {
   return new Response(pdf.buffer, {
     headers: {
       "Content-Type": "application/pdf",
+    "Content-Disposition": "inline; filename=invoice.pdf",
     },
   });
 }

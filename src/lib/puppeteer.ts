@@ -1,22 +1,35 @@
-// lib/puppeteer.ts
-
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 
-let browser: any = null;
-
 export async function getBrowser() {
-  if (browser) return browser;
+  const isProd = process.env.NODE_ENV === "production";
 
-  const isProd = process.env.VERCEL === "1";
+  let browser;
 
-  browser = await puppeteer.launch({
-    args: isProd ? chromium.args : [],
-    executablePath: isProd
-      ? await chromium.executablePath()
-      : `${process.env.CHROME_DRIVER_PATH}`, // 👈 local chrome path
-    headless: true,
-  });
+  if (isProd) {
+    // 🚀 Vercel / serverless
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+      defaultViewport: {
+        width: 794,
+        height: 1123,
+        deviceScaleFactor: 2,
+      },
+    });
+  } else {
+    // 🟢 LOCAL (IMPORTANT FIX)
+    browser = await puppeteer.launch({
+      headless: true,
+      channel: "chrome", // 👈 THIS FIXES YOUR ERROR
+      defaultViewport: {
+        width: 794,
+        height: 1123,
+        deviceScaleFactor: 2,
+      },
+    });
+  }
 
   return browser;
 }

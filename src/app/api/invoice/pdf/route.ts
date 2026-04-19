@@ -5,22 +5,22 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const { html } = await req.json();
 
-  const browser = await getBrowser(); // ✅ reused
+  const browser = await getBrowser();
   const page = await browser.newPage();
 
   await page.setContent(html, { waitUntil: "domcontentloaded" });
 
-  const pdf = await page.pdf({
+  const pdfBuffer = await page.pdf({
     format: "A4",
     printBackground: true,
   });
 
-  await page.close(); // 🔥 important
+  await page.close();
 
-  return new Response(pdf.buffer, {
+  return new Response(new Uint8Array(pdfBuffer), {  // ✅ FIX
     headers: {
       "Content-Type": "application/pdf",
-    "Content-Disposition": "inline; filename=invoice.pdf",
+      "Content-Disposition": "inline; filename=invoice.pdf",
     },
   });
 }

@@ -54,7 +54,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const pdfUrl = (await uploadPDF(Pdf)) as { secure_url: string } | null;
+    const pdfBuffer = Buffer.from(Pdf);
+
+    const pdfUrl = (await uploadPDF(pdfBuffer)) as { secure_url: string } | null;
     console.log("PDF URL", pdfUrl);
 
     

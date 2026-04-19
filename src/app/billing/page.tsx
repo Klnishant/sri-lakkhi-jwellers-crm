@@ -91,16 +91,12 @@ function FormInput({
   );
 }
 
-const css = await fetch("https://sri-lakkhi-jwellers-crm.vercel.app/invoice.min.css").then((res) => res.text());
-
-console.log("Fetched CSS: ", css);
-
 export function generateHTML(data: InvoiceData) {
   return `
     <html>
+    <link rel="stylesheet" href="http://localhost:3000/invoice.min.css" />
       <head>
         <style>
-          ${css}
           @page { size: A4; }
           body { margin: 0; }
         </style>

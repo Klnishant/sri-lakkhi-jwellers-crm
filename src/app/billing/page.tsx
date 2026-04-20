@@ -1,13 +1,13 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { Trash2, Plus, Printer, Save, Download, Search } from "lucide-react";
+import { use, useDeferredValue, useEffect, useRef, useState } from "react";
+import { Trash2, Plus, Printer, Save, Download, Search, Form } from "lucide-react";
 import NavBar from "@/src/components/core/NavBar";
 import Footer from "@/src/components/core/Footer";
 import html2pdf from "html2pdf.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import InvoiceTemplate from "@/src/components/ui/InvoiceTemplate";
-import GSTInvoice from "@/src/components/ui/GSTInvoice";
+import  GSTInvoice  from "@/src/components/ui/GSTInvoice";
 import { ICustomer } from "@/src/models/Customer";
 import { IPRODUCTS } from "@/src/models/Product";
 import axios from "axios";
@@ -16,6 +16,10 @@ import CreateProductModal from "@/src/components/products/CreateProduct";
 import { IProduct } from "@/src/models/OldProduct";
 import CreateOldProductModal from "@/src/components/products/CreateOldProduct";
 import { ISHOP } from "@/src/models/Shop";
+import html2canvaspro from "html2canvas-pro";
+import dynamic from "next/dynamic";
+import { pdf, PDFViewer } from "@react-pdf/renderer";
+import { GSTInvoicePDF } from "@/src/components/ui/GSTInvoicePDF";
 
 // ── Types ──────────────────────────────────────────────
 type LineItem = {
@@ -90,7 +94,6 @@ function FormInput({
     </div>
   );
 }
-
 export function generateHTML(data: InvoiceData) {
   return `
     <html>
@@ -123,6 +126,8 @@ function BillingMainSection() {
   const [data, setData] = useState<InvoiceData | null>(null);
   const [shopDetails, setShopDetails] = useState<ISHOP | null>(null);
   const [finalizing, setFinalizing] = useState(false);
+
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<LineItem[]>([
     {
@@ -239,6 +244,13 @@ function BillingMainSection() {
     });
   }, [client, selectedItems, oldProducts, shopDetails]);
 
+  const deferredData = useDeferredValue(data);
+
+  const generatePDFBlob = async (data: any) => {
+    const blob = await pdf(<GSTInvoicePDF data={data} />).toBlob();
+    return blob;
+  }
+
   const handleDownload = async () => {
     if (!data) return;
     const html = generateHTML(data);
@@ -279,11 +291,14 @@ function BillingMainSection() {
   };
 
   const handleFinalize = async () => {
-    if (!data) return;
+    if (!data || !contentRef.current) return;
     setFinalizing(true);
 
+
+
     try {
-      const html = generateHTML(data);
+     const pdfBlob = await generatePDFBlob(data);
+      const formData = new FormData();
 
       const body = {
         customerDetails: client,
@@ -299,9 +314,15 @@ function BillingMainSection() {
           invoiceValue,
           grandTotal,
         },
-        html,
       };
-      const res = await axios.post("/api/create-bill", body);
+
+      formData.append("file",pdfBlob);
+      formData.append("body", JSON.stringify(body));
+      const res = await axios.post("/api/create-bill", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       if (res.data.success) {
         
         //const resData = await res.json();
@@ -769,7 +790,28 @@ function BillingMainSection() {
 
         {/* Invoice Card */}
         {/* <InvoiceTemplate data={data} /> */}
-        {data && <GSTInvoice data={data} />}
+        <div ref={contentRef} className=" w-full h-screen">
+          {data && (
+             <GSTInvoice data={data} />
+          )}
+        </div>
+        {/* <div>
+        <PDFViewer
+         width="100%"
+        height="100%"
+        style={{
+          border: "none",
+          backgroundColor: "#ffffff",
+        }}
+        showToolbar={false}
+        >
+          <div>
+            {data && (
+            <GSTInvoicePDF data={data} />
+          )}
+          </div>
+        </PDFViewer>
+      </div> */}
       </div>
     </div>
   );

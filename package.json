@@ -8,9 +8,13 @@
     "start": "next start",
     "lint": "eslint"
   },
+  "overrides": {
+    "html2canvas": "npm:html2canvas-pro@latest"
+  },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-toast": "^1.2.15",
+    "@react-pdf/renderer": "^4.5.1",
     "@sparticuz/chromium": "^147.0.0",
     "axios": "^1.15.0",
     "bcryptjs": "^3.0.3",
@@ -18,13 +22,14 @@
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "fs": "^0.0.1-security",
+    "html2canvas-pro": "^2.0.2",
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.8.0",
     "mongoose": "^9.4.1",
     "next": "16.2.3",
     "next-auth": "^4.24.13",
     "number-to-words": "^1.2.4",
-    "postcss-color-function": "^4.1.0",
+    "postcss-color-function": "^1.2.0",
     "puppeteer-core": "^24.40.0",
     "react": "19.2.4",
     "react-dom": "^19.2.4",

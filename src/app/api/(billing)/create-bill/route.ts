@@ -14,11 +14,21 @@ export async function POST(req: Request) {
   await dbconnect();
 
   try {
-    const body = await req.json();
+    const formData = await req.formData();
 
-    const { customerDetails, items, olditems, billingDetails, html } = body;
+    const file = formData.get("file") as File;
+    const bodyString = formData.get("body") as string;
 
-    const pdfPromise = generatePDF(html); // start early
+    if (!file || !bodyString) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Missing required fields" }),
+        { status: 400 },
+      );
+    }
+
+    const body = JSON.parse(bodyString);
+
+   const { customerDetails, items, oldItems, billingDetails } = body;
 
     const customerDetailsObj = await addCustomer(customerDetails) as any as {
       success: boolean;
@@ -43,20 +53,12 @@ export async function POST(req: Request) {
 
     console.log("Customer Details", customerDetailsObj);
 
-    const Pdf = await pdfPromise; // wait only when needed
+    const
+     bytes = await file.arrayBuffer();
 
-    console.log("PDF: ", Pdf);
+    const buffer = Buffer.from(bytes);
 
-    if (!Pdf) {
-      return new Response(
-        JSON.stringify({ success: false, message: "Failed to generate PDF" }),
-        { status: 500 },
-      );
-    }
-
-    const pdfBuffer = Buffer.from(Pdf);
-
-    const pdfUrl = (await uploadPDF(pdfBuffer)) as { secure_url: string } | null;
+    const pdfUrl = (await uploadPDF(buffer)) as { secure_url: string } | null;
     console.log("PDF URL", pdfUrl);
 
     

@@ -34,3 +34,10 @@ body {
   -ms-overflow-style: none;  /* IE & Edge */
   scrollbar-width: none;     /* Firefox */
 }
+
+.pdf-safe-colors {
+  --primary: #3b82f6;
+  --secondary: #10b891;
+  background-color: #ffffff;
+  color: #000000;
+}

@@ -21,9 +21,7 @@ export async function PATCH(req: Request) {
         !body.email ||
         !body.goldRatePer10g ||
         !body.silverRatePerKg ||
-        !body.sgst ||
-        !body.cgst ||
-        !body.igst ||
+        !body.gstOnMetal ||
         !body.customDuty ||
         !body.gstOnMakingCharge
       ) {
@@ -43,9 +41,7 @@ export async function PATCH(req: Request) {
         ifscCode: body.ifscCode || "",
         goldRatePer10g: parseCurrency(body.goldRatePer10g),
         silverRatePerKg: parseCurrency(body.silverRatePerKg),
-        sgst: parseCurrency(body.sgst),
-        cgst: parseCurrency(body.cgst),
-        igst: parseCurrency(body.igst),
+        gstOnMetal: parseCurrency(body.gstOnMetal),
         customDuty: parseCurrency(body.customDuty),
         gstOnMakingCharge: parseCurrency(body.gstOnMakingCharge),
         termsAndConditions: body.termsAndConditions || "",
@@ -68,7 +64,7 @@ export async function PATCH(req: Request) {
         { status: 201 },
       );
     } else {
-      const updatedShop = await Shop.findByIdAndUpdate(shop._id, body);
+      const updatedShop = await Shop.findByIdAndUpdate(shop._id, body,{new:true});
 
       if (!updatedShop) {
         return Response.json(

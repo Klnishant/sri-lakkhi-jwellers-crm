@@ -1,12 +1,10 @@
-import { generatePDF } from "@/src/helper/generatePdf";
-import { uploadPDF } from "@/src/helper/uploadPdf";
-import { addCustomer, addOldProducts, createOrder } from "@/src/lib/billing";
+// app/api/create-bill/route.ts
+
 import dbconnect from "@/src/lib/dbconnect";
+import Product from "@/src/models/Product";
 import OrderModel from "@/src/models/Order";
-import axios from "axios";
-import { log } from "console";
-import { success } from "zod";
-import { v2 as cloudinary } from "cloudinary";
+import { uploadPDF } from "@/src/helper/uploadPdf";
+import { addCustomer } from "@/src/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -22,95 +20,244 @@ export async function POST(req: Request) {
     if (!file || !bodyString) {
       return new Response(
         JSON.stringify({ success: false, message: "Missing required fields" }),
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     const body = JSON.parse(bodyString);
 
-   const { customerDetails, items, oldItems, billingDetails } = body;
+    const { customerDetails, items, billingDetails } = body;
 
-    const customerDetailsObj = await addCustomer(customerDetails) as any as {
-      success: boolean;
-      data: any;
-      error: string;
-      status: number;
-      message: string;
-    };
+    const {
+      goldRatePer10g,
+      silverRatePerKg,
+      sellerGSTIN,
+      placeOfSupply,
+      isInterState,
+      discount = 0,
+      customDuty = 0,
+      invoiceNumber,
+      invoiceDate,
+      metalGSTRate,
+      makingGSTRate,
+    } = billingDetails;
 
-    console.log("Customer Details Object", customerDetailsObj);
+    // =========================
+    // 🔹 CUSTOMER
+    // =========================
+    const customer = await addCustomer(customerDetails);
 
-    if (!customerDetailsObj.success) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: customerDetailsObj.message,
-          error: customerDetailsObj.error,
-        }),
-        { status: customerDetailsObj.status },
-      );
+    if (!customer.success || !customer.data) {
+      return new Response(JSON.stringify(customer), {
+        status: customer.status,
+      });
     }
 
-    console.log("Customer Details", customerDetailsObj);
-
-    const
-     bytes = await file.arrayBuffer();
-
+    // =========================
+    // 🔹 PDF UPLOAD
+    // =========================
+    const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const pdfUrl = (await uploadPDF(buffer)) as { secure_url: string } | null;
-    console.log("PDF URL", pdfUrl);
+    const pdfUrl = (await uploadPDF(buffer)) as { secure_url: string };
 
-    
-    const orderData = {
-      customerId: customerDetailsObj.data._id,
-      products: body.items,
-      totalAmount: body.billingDetails.grandTotal,
-      grossWeight: body.billingDetails.grossWeight,
-      customDuty: body.billingDetails.customDuty,
-      sgst: body.billingDetails.sgst,
-      cgst: body.billingDetails.cgst,
-      igst: body.billingDetails.igst,
-      gstOnMakingCharge: body.billingDetails.gstOnMakingCharge,
-      discount: body.billingDetails.discount || 0,
-      totalPayableAmmount: body.billingDetails.invoiceValue,
-      invoiceNumber: body.billingDetails.invoiceNumber,
-      invoiceUrl: pdfUrl?.secure_url,
-      oldProducts: body.olditems || [],
-    };
+    // =========================
+    // 🔥 CALCULATION START
+    // =========================
+    let products: any[] = [];
 
-    const orderObject = await createOrder(orderData) as any as {
-      success: boolean;
-      data: any;
-      error: string;
-      status: number;
-      message: string;
-    };
+    let totalTaxableValue = 0;
 
-    log("Order Object: ", orderObject);
+    let totalCGST = 0;
+    let totalSGST = 0;
+    let totalIGST = 0;
 
-    if (!orderObject.success) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: orderObject.message,
-          error: orderObject.error,
-        }),
-        { status: 500 },
-      );
+    let totalMetalGST = 0;
+    let totalMakingGST = 0;
+
+    let grossWeight = 0;
+
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+      if (!product) throw new Error("Product not found");
+
+      const quantity = item.quantity;
+
+      if (!quantity || quantity <= 0) {
+        throw new Error("Invalid quantity");
+      }
+
+      if (item.makingCharge === undefined || item.makingCharge === null) {
+        throw new Error("Making charge is required");
+      }
+
+      // =========================
+      // 🔥 DYNAMIC METAL PRICE
+      // =========================
+      let metalPrice = 0;
+
+      if (product.type === "Gold") {
+        metalPrice = (goldRatePer10g * product.weight) / 10;
+      } else if (product.type === "Silver") {
+        metalPrice = (silverRatePerKg * product.weight) / 1000;
+      } else {
+        metalPrice = product.price || 0;
+      }
+
+      const makingCharge = item.makingCharge;
+
+      const metalValue = metalPrice * quantity;
+      const makingValue = makingCharge * quantity;
+
+      const totalTaxable = metalValue + makingValue;
+
+      // =========================
+      // 🔥 GST CALCULATION
+      // =========================
+      const gstRateMetal = metalGSTRate ?? 0;
+      const gstRateMaking = makingGSTRate ?? 0;
+
+      const metalGST = (metalValue * gstRateMetal) / 100;
+      const makingGST = (makingValue * gstRateMaking) / 100;
+
+      let cgstMetal = 0,
+        sgstMetal = 0,
+        igstMetal = 0;
+
+      let cgstMaking = 0,
+        sgstMaking = 0,
+        igstMaking = 0;
+
+      if (isInterState) {
+        igstMetal = metalGST;
+        igstMaking = makingGST;
+      } else {
+        cgstMetal = metalGST / 2;
+        sgstMetal = metalGST / 2;
+
+        cgstMaking = makingGST / 2;
+        sgstMaking = makingGST / 2;
+      }
+
+      const totalGST =
+        cgstMetal +
+        sgstMetal +
+        igstMetal +
+        cgstMaking +
+        sgstMaking +
+        igstMaking;
+
+      // =========================
+      // 🔹 PUSH PRODUCT
+      // =========================
+      products.push({
+        productId: product._id,
+        name: product.name,
+        quantity,
+
+        hsn: product.hsn,
+
+        metalPrice,
+        makingCharge,
+
+        metalValue,
+        makingValue,
+
+        gstRateMetal,
+        gstRateMaking,
+
+        cgstMetal,
+        sgstMetal,
+        igstMetal,
+
+        cgstMaking,
+        sgstMaking,
+        igstMaking,
+
+        totalTaxable,
+        totalGST,
+      });
+
+      // =========================
+      // 🔹 TOTALS
+      // =========================
+      totalTaxableValue += totalTaxable;
+
+      totalCGST += cgstMetal + cgstMaking;
+      totalSGST += sgstMetal + sgstMaking;
+      totalIGST += igstMetal + igstMaking;
+
+      totalMetalGST += metalGST;
+      totalMakingGST += makingGST;
+
+      grossWeight += product.weight * quantity;
     }
-    console.log("Order Object: ", orderObject);
 
-    return new Response(JSON.stringify({ success: true, data:pdfUrl?.secure_url, message: "Order created successfully." }), { status: 201 });
+    // =========================
+    // 🔹 FINAL AMOUNT
+    // =========================
+    const totalAmount =
+      totalTaxableValue + totalCGST + totalSGST + totalIGST;
+
+    const totalPayableAmmount = totalAmount - discount;
+
+    // =========================
+    // 🔹 CREATE ORDER
+    // =========================
+    const order = await OrderModel.create({
+      customerId: customer.data._id,
+
+      products,
+
+      totalTaxableValue,
+
+      totalCGST,
+      totalSGST,
+      totalIGST,
+
+      totalMetalGST,
+      totalMakingGST,
+
+      totalAmount,
+      totalPayableAmmount,
+
+      grossWeight,
+      customDuty,
+
+      // 🔹 backward compatibility
+      cgst: totalCGST,
+      sgst: totalSGST,
+      igst: totalIGST,
+      gstOnMakingCharge: totalMakingGST,
+
+      discount,
+
+      sellerGSTIN,
+      placeOfSupply,
+      isInterState,
+
+      invoiceNumber,
+      invoiceUrl: pdfUrl?.secure_url,
+
+      status: "Completed",
+    });
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: order,
+        pdf: pdfUrl?.secure_url,
+      }),
+      { status: 201 }
+    );
   } catch (error: any) {
-    console.error("Error creating bill:", error);
     return new Response(
       JSON.stringify({
         success: false,
         message: "Failed to create bill",
         error: error.message,
       }),
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

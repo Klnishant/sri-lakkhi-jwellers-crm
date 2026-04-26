@@ -12,9 +12,9 @@ type LocationInfo = {
 };
 
 const location: LocationInfo = {
-  name: "Mansion Road Showroom",
-  addressLine1: "124 Heritage Plaza, Suite 400",
-  addressLine2: "Calcutta, WB 700001",
+  name: "SRI LAKHHI JEWELLERS",
+  addressLine1: "DARGAH ROAD NEAR GANDHI CHOWK TAJPUR",
+  addressLine2: "Samastipur, Bihar 848130",
   phone: "+91 98300 12345",
   hours: [
     { days: "Mon – Sat:", time: "10:30 AM – 8:30 PM" },
@@ -176,7 +176,7 @@ export default function LocationSection() {
           <div className="relative w-full lg:w-[580px] xl:w-[640px] flex-shrink-0 rounded-sm overflow-hidden shadow-md"
             style={{ aspectRatio: "16/10" }}
           >
-            <div className="w-full h-full bg-gradient-to-br from-[#3A2A1A] via-[#5C4530] to-[#8B6840]" />
+            <img src="./Shop-Location.jpeg" alt="" className="w-full h-full object-cover" />
           </div>
 
         </div>

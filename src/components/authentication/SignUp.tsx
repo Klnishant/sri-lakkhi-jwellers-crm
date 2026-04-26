@@ -392,7 +392,7 @@ export default function SignupPage() {
           >
             Already have an account?{" "}
             <a
-              href="/login"
+              href="/sign-in"
               className="text-[#8B6914] hover:text-[#5C3D00] transition-colors duration-200 font-semibold"
             >
               Sign In

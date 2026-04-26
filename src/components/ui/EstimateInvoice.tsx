@@ -430,7 +430,7 @@ function TaxRow({
 }
 
 // ── Main PDF Document ──────────────────────────────────
-export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
+export function EstimateInvoice({ data }: { data: InvoiceData }) {
   const shop = data.shopDetails;
 
   // ── Mirror GSTInvoice.tsx GST calculation exactly ──
@@ -440,10 +440,10 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
   data.items.forEach((item) => {
     const rate =
       item.type === "Gold"
-        ? (shop?.goldRatePer10g ?? 0) / 10
-        : (shop?.silverRatePerKg ?? 0) / 1000;
+        ? (shop?.goldRatePer10g ?? 0) / 10 + (shop?.gstOnMetal ?? 0)*(shop?.goldRatePer10g ?? 0) / 1000
+        : (shop?.silverRatePerKg ?? 0) / 1000 + (shop?.gstOnMetal ?? 0)*(shop?.silverRatePerKg ?? 0) / 10000;
     metalValue += rate * item.weight;
-    makingValue += item.makingCharge ?? 0;
+    makingValue += (item.makingCharge ?? 0) + (shop?.gstOnMakingCharge ?? 0)*(item.makingCharge ?? 0)/100;
   });
 
   const gstOnMetal = shop?.gstOnMetal ?? 0;
@@ -454,21 +454,11 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
 
   // isInterState: GSTInvoice currently hardcodes `if (false)` → always CGST+SGST
   // Keep the same logic; we pass isInterState through InvoiceData if available
-  const isInterState = (data as any).isInterState ?? false;
-
-  let cgst = 0,
-    sgst = 0,
-    igst = 0;
-  if (isInterState) {
-    igst = metalGST + makingGST;
-  } else {
-    cgst = (metalGST + makingGST) / 2;
-    sgst = (metalGST + makingGST) / 2;
-  }
+  
 
   const subTotal = metalValue + makingValue;
-  const totalTax = cgst + sgst + igst;
-  const invoiceValue = subTotal + totalTax;
+  //const totalTax = cgst + sgst + igst;
+  const invoiceValue = subTotal;
   const oldDeduction = data.oldItems?.reduce((s, i) => s + i.price, 0) ?? 0;
   const grandTotal = invoiceValue - oldDeduction;
   const grossWeight = data.items.reduce((s, i) => s + i.weight, 0);
@@ -507,10 +497,8 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
             <Text style={s.metaLine}>
               Date: <Text style={s.metaBold}>{data.date}</Text>
             </Text>
-            <Text style={s.taxLabel}>TAX INVOICE</Text>
-            <Text style={s.gstLabel}>GST INVOICE</Text>
+            <Text style={s.taxLabel}>ESTIMATE INVOICE</Text>
             <Text style={s.metaLine}>{shop?.address}</Text>
-            <Text style={s.metaLine}>GSTIN: {shop?.gstin}</Text>
             <Text style={s.metaLine}>AC/NO: {shop?.accountNumber}</Text>
             <Text style={s.metaLine}>IFSC Code: {shop?.ifscCode}</Text>
             <Text style={s.metaLine}>Mobile: {shop?.contactNumber}</Text>
@@ -554,17 +542,17 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
             <TH width={COL.rate}>Rate{"\n"}(₹/g)</TH>
             <TH width={COL.making}>Making{"\n"}Chg (₹)</TH>
             <TH width={COL.taxable} last>
-              Taxable{"\n"}Amt (₹)
+             Amt (₹)
             </TH>
           </View>
 
           {/* Item rows */}
           {data.items.map((item, idx) => {
             const rate =
-              item.type === "Gold"
-                ? (shop?.goldRatePer10g ?? 0) / 10
-                : (shop?.silverRatePerKg ?? 0) / 1000;
-            const taxable = rate * item.weight + (item.makingCharge ?? 0);
+  item.type === "Gold"
+    ? (shop?.goldRatePer10g ?? 0) / 10 + (shop?.goldRatePer10g ?? 0) * (data?.shopDetails?.gstOnMetal ?? 0) / 1000
+    : (shop?.silverRatePerKg ?? 0) / 1000 + (shop?.silverRatePerKg ?? 0) * (data?.shopDetails?.gstOnMetal ?? 0) / 10000;
+            const taxable = rate * item.weight + (item.makingCharge ?? 0) + ((item.makingCharge ?? 0) * (data?.shopDetails?.gstOnMakingCharge ?? 0)) / 100;
 
             return (
               <View
@@ -648,54 +636,7 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
             GST BREAKDOWN TABLE
             Matches the new HTML section exactly
         ══════════════════════════════════════════ */}
-        <View style={s.gstTableWrap}>
-          {/* Head */}
-          <View style={s.gstHeadRow}>
-            {["Description", "Taxable Value", "GST Rate", "GST Amount"].map(
-              (h, i, arr) => (
-                <Text
-                  key={h}
-                  style={[
-                    s.thBase,
-                    { width: Object.values(GSTCOL)[i] },
-                    i === arr.length - 1 ? s.cellLast : {},
-                  ]}
-                >
-                  {h}
-                </Text>
-              ),
-            )}
-          </View>
-
-          {/* Metal row */}
-          <View style={s.gstBodyRow}>
-            <TD width={GSTCOL.desc}>Gold/Silver Value</TD>
-            <TD width={GSTCOL.taxable} align="right">
-              {fmtINR(metalValue)}
-            </TD>
-            <TD width={GSTCOL.rate} align="center">
-              {gstOnMetal}%
-            </TD>
-            <TD width={GSTCOL.amt} align="right" bold last>
-              {fmtINR(metalGST)}
-            </TD>
-          </View>
-
-          {/* Making row */}
-          <View style={s.gstBodyRowAlt}>
-            <TD width={GSTCOL.desc}>Making Charges</TD>
-            <TD width={GSTCOL.taxable} align="right">
-              {fmtINR(makingValue)}
-            </TD>
-            <TD width={GSTCOL.rate} align="center">
-              {gstOnMaking}%
-            </TD>
-            <TD width={GSTCOL.amt} align="right" bold last>
-              {fmtINR(makingGST)}
-            </TD>
-          </View>
-        </View>
-
+        
         {/* ══════════════════════════════════════════
             TOTALS SECTION
         ══════════════════════════════════════════ */}
@@ -775,10 +716,10 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
           {/* Right — tax breakdown panel */}
           <View style={s.totalsRight}>
             <TaxRow label="Sub-Total" value={fmtINR(subTotal)} alt />
-            <TaxRow label="CGST (Split GST)" value={fmtINR(cgst)} />
+            {/* <TaxRow label="CGST (Split GST)" value={fmtINR(cgst)} />
             <TaxRow label="SGST (Split GST)" value={fmtINR(sgst)} alt />
             <TaxRow label="IGST (If Applicable)" value={fmtINR(igst)} />
-            <TaxRow label="Total Tax Amt" value={fmtINR(totalTax)} bold alt />
+            <TaxRow label="Total Tax Amt" value={fmtINR(totalTax)} bold alt /> */}
             <TaxRow label="Invoice Value" value={fmtINR(invoiceValue)} />
             <TaxRow
               label="Grand Total"

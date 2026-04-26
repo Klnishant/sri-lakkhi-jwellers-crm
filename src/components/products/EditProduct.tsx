@@ -157,7 +157,7 @@ export default function EditProductModal({ onClose, onSave, product }: CreatePro
             stock: product?.stock.toString() || "",
             type: product?.type || "",
             purity: product?.purity || "",
-            makingCharge: product?.makingCharge.toString() || "",
+            makingCharge: product?.makingCharge?.toString() || "",
             huid: product?.huid || "",
             hsn: product?.hsn?.toString() || "",
         })

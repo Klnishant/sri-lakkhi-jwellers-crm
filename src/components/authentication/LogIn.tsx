@@ -79,7 +79,7 @@ export default function LoginPage() {
         <div className="absolute bottom-[20%] right-[10%] w-48 h-48 rounded-full bg-[#1A0F35]/40 blur-2xl pointer-events-none" />
 
         {/* Marquee text — top */}
-        <div className="relative z-10 overflow-hidden">
+        {/* <div className="relative z-10 overflow-hidden">
           <p
             className="text-[#C9A84C] tracking-[0.45em] whitespace-nowrap animate-marquee"
             style={{
@@ -91,7 +91,7 @@ export default function LoginPage() {
           >
             TUEW ONY &nbsp;&nbsp;&nbsp; TUEW ONY &nbsp;&nbsp;&nbsp; TUEW ONY
           </p>
-        </div>
+        </div> */}
 
         {/* Centre: Image placeholder */}
         {/*
@@ -136,7 +136,7 @@ export default function LoginPage() {
           </p>
 
           {/* Bottom marquee */}
-          <div className="overflow-hidden mt-6">
+          {/* <div className="overflow-hidden mt-6">
             <p
               className="text-white/20 tracking-[0.35em] whitespace-nowrap animate-marquee-slow"
               style={{
@@ -148,7 +148,7 @@ export default function LoginPage() {
               SAFE &nbsp; SEE &nbsp; WORK &nbsp;&nbsp;&nbsp; SAFE &nbsp; SEE
               &nbsp; WORK &nbsp;&nbsp;&nbsp; SAFE &nbsp; SEE &nbsp; WORK
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Gold corner accent — bottom right */}
@@ -232,7 +232,7 @@ export default function LoginPage() {
               >
                 Secret Key
               </label>
-              <button
+              {/* <button
                 className="text-[#8B6914] hover:text-[#5C3D00] transition-colors duration-200"
                 style={{
                   fontFamily: "'Georgia', serif",
@@ -243,7 +243,7 @@ export default function LoginPage() {
                 }}
               >
                 Forgot?
-              </button>
+              </button> */}
             </div>
             <div className="flex items-center gap-3 bg-white border border-[#DDD0C4] rounded-md px-4 py-3 focus-within:border-[#8B6914] transition-colors duration-200">
               <Lock
@@ -285,6 +285,19 @@ export default function LoginPage() {
           >
             Sign In
           </button>
+          {/* Sign up link */}
+          <p
+            className="text-center mt-5 text-[#9E8A7E]"
+            style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
+          >
+            you don't have an account?{" "}
+            <a
+              href="/sign-up"
+              className="text-[#8B6914] hover:text-[#5C3D00] transition-colors duration-200 font-semibold"
+            >
+              Sign up
+            </a>
+          </p>
         </div>
 
         {/* Copyright footer */}

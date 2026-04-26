@@ -11,10 +11,9 @@ export interface ISHOP extends Document {
   termsAndConditions: string;
   goldRatePer10g: number;
   silverRatePerKg: number;
+  stateCode?: string;
   customDuty: number;
-  sgst: number;
-  cgst: number;
-  igst: number;
+  gstOnMetal: number;
   gstOnMakingCharge: number;
   createdAt: Date;
   updatedAt: Date;
@@ -33,9 +32,7 @@ const ShopSchema: Schema = new Schema<ISHOP>(
     goldRatePer10g: { type: Number, required: true },
     silverRatePerKg: { type: Number, required: true },
     customDuty: { type: Number, required: true },
-    sgst: { type: Number, required: true },
-    cgst: { type: Number, required: true },
-    igst: { type: Number, required: true },
+    gstOnMetal: { type: Number, required: true },
     gstOnMakingCharge: { type: Number, required: true },
   },
   { timestamps: true },

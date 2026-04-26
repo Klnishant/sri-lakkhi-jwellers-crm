@@ -1,11 +1,29 @@
 import dbconnect from "@/src/lib/dbconnect";
 import CustomerModel from "@/src/models/Customer";
 
-export async function GET() {
+export async function GET(req: Request) {
   await dbconnect();
 
   try {
-    const customers = await CustomerModel.find().sort({ dueAmount: 1 });
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get("search") || "";
+
+    const query = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+            { dueAmount: { $gt: 0 } },
+            { advanceAmount: { $gt: 0 } },
+          ],
+        }
+      : {
+        $or: [
+          { dueAmount: { $gt: 0 } },
+            { advanceAmount: { $gt: 0 } },
+        ]
+      };
+    const customers = await CustomerModel.find(query).sort({ dueAmount: 1 }).limit(5);
 
     if (!customers) {
       return new Response(

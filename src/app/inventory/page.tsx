@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useEffect, useState } from "react";
 import {
   Search,
@@ -24,6 +22,10 @@ import EditProductModal from "@/src/components/products/EditProduct";
 import DeleteProductAlert from "@/src/components/ui/DeleteProductAlert";
 import { id } from "zod/locales";
 import Pagination from "@/src/components/ui/Pagination";
+import ExportGSTReport from "@/src/components/ui/ExportGSTReport";
+import { User } from "next-auth";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 // ── Types ──────────────────────────────────────────────
 type Purity = "22k Gold" | "18k Gold" | "24k Gold";
@@ -149,6 +151,29 @@ function MainSection() {
   );
   const [deleting, setDeleting] = useState(false);
   const debouncedSearch = useDebounceCallback(setSearch, 300);
+  const [user, setUser] = useState<User | null>(null);
+  
+    const router = useRouter();
+  
+    const { data: session, status } = useSession();
+
+useEffect(() => {
+  if (status === "loading") return; // ⛔ wait
+
+  if (status === "unauthenticated") {
+    router.replace("/sign-in");
+    return;
+  }
+
+  if (status === "authenticated") {
+    setUser(session.user as User);
+  }
+
+  if (status === "authenticated" && session.user?.verified === false) {
+  router.replace("/");
+}
+}, [status, session]);
+  
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -224,6 +249,7 @@ function MainSection() {
   const tableHeaders = [
     { label: "Item ID", key: "id" },
     { label: "Product Name", key: "productName" },
+    {label:"Stocks", key: "stocks"},
     { label: "Purity", key: "purity" },
     { label: "Type", key: "type" },
     { label: "Weight (G)", key: "weightG" },
@@ -312,6 +338,7 @@ function MainSection() {
             onChange={setType}
           />
         </div>
+        <ExportGSTReport />
       </div>
 
       {/* ── Table ── */}
@@ -321,7 +348,7 @@ function MainSection() {
           className="hidden md:grid items-center px-6 py-4 border-b border-[#E8DDD4]"
           style={{
             gridTemplateColumns:
-              "120px 500px 130px 120px 100px 110px 180px 100px",
+              "120px 400px 100px 130px 120px 100px 110px 180px 100px",
           }}
         >
           {tableHeaders.map((h) => (
@@ -424,7 +451,7 @@ function MainSection() {
                   className="hidden md:grid items-center px-6 py-5 hover:bg-[#F5EDE4]"
                   style={{
                     gridTemplateColumns:
-                     "120px 500px 130px 120px 100px 110px 180px 100px",
+                     "120px 400px 100px 130px 120px 100px 110px 180px 100px",
                   }}
                 >
                   <span className="text-[#6B5040] text-[13px] font-[Georgia]">
@@ -433,6 +460,10 @@ function MainSection() {
 
                   <span className="text-[#2C1A0E] text-[15px] font-semibold pr-4 whitespace-nowrap font-[Georgia]">
                     {item?.name}
+                  </span>
+
+                  <span className="text-[#2C1A0E] text-[13px] font-semibold pr-4 whitespace-nowrap font-[Georgia]">
+                    {item?.stock} pcs
                   </span>
 
                   <div> <PurityBadge label={item?.purity} /> </div>

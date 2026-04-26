@@ -1,13 +1,21 @@
 "use client";
 
 import { use, useDeferredValue, useEffect, useRef, useState } from "react";
-import { Trash2, Plus, Printer, Save, Download, Search, Form } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Printer,
+  Save,
+  Download,
+  Search,
+  Form,
+} from "lucide-react";
 import NavBar from "@/src/components/core/NavBar";
 import Footer from "@/src/components/core/Footer";
 import html2pdf from "html2pdf.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import InvoiceTemplate from "@/src/components/ui/InvoiceTemplate";
-import  GSTInvoice  from "@/src/components/ui/GSTInvoice";
+import GSTInvoice from "@/src/components/ui/GSTInvoice";
 import { ICustomer } from "@/src/models/Customer";
 import { IPRODUCTS } from "@/src/models/Product";
 import axios from "axios";
@@ -20,6 +28,10 @@ import html2canvaspro from "html2canvas-pro";
 import dynamic from "next/dynamic";
 import { pdf, PDFViewer } from "@react-pdf/renderer";
 import { GSTInvoicePDF } from "@/src/components/ui/GSTInvoicePDF";
+import { EstimateInvoice } from "@/src/components/ui/EstimateInvoice";
+import { useRouter } from "next/navigation";
+import { User } from "next-auth";
+import { useSession } from "next-auth/react";
 
 // ── Types ──────────────────────────────────────────────
 type LineItem = {
@@ -146,6 +158,29 @@ function BillingMainSection() {
     },
   ]);
 
+  const [user, setUser] = useState<User | null>(null);
+    
+      const router = useRouter();
+    
+      const { data: session, status } = useSession();
+  
+  useEffect(() => {
+    if (status === "loading") return; // ⛔ wait
+  
+    if (status === "unauthenticated") {
+      router.replace("/sign-in");
+      return;
+    }
+  
+    if (status === "authenticated") {
+      setUser(session.user as User);
+    }
+  
+    if (status === "authenticated" && session.user?.verified === false) {
+    router.replace("/");
+  }
+  }, [status, session]);
+
   const grossWeight = selectedItems.reduce((s, i) => s + i.weight, 0);
   const subTotal = selectedItems.reduce(
     (s, i) =>
@@ -157,13 +192,20 @@ function BillingMainSection() {
   );
   const cgst =
     Math.round(
-      ((subTotal * (shopDetails?.cgst ?? shopDetails?.cgst ?? 0)) / 100) * 100,
-    ) / 100;
-  const sgst =
-    Math.round(((subTotal * (shopDetails?.sgst ?? 0)) / 100) * 100) / 100;
+      ((subTotal * (shopDetails?.gstOnMetal ?? shopDetails?.gstOnMetal ?? 0)) /
+        100) *
+        100,
+    ) /
+    100 /
+    2;
+  const sgst = cgst;
   const igst =
-    Math.round(((subTotal * (shopDetails?.igst ?? 0)) / 100) * 100) / 100;
-  const totalTax = cgst + sgst + igst;
+    Math.round(
+      ((subTotal * (shopDetails?.gstOnMetal ?? shopDetails?.gstOnMetal ?? 0)) /
+        100) *
+        100,
+    ) / 100;
+  const totalTax = cgst + sgst;
   const invoiceValue = subTotal + totalTax;
   const grandTotal =
     invoiceValue - (oldProducts?.reduce((s, i) => s + i.price, 0) ?? 0);
@@ -249,18 +291,17 @@ function BillingMainSection() {
   const generatePDFBlob = async (data: any) => {
     const blob = await pdf(<GSTInvoicePDF data={data} />).toBlob();
     return blob;
+  };
+
+  const generateEstimateBlob = async (data: any) => {
+    const blob = await pdf(<EstimateInvoice data={data} />).toBlob();
+    return blob;
   }
 
   const handleDownload = async () => {
     if (!data) return;
-    const html = generateHTML(data);
-
-    const res = await fetch("/api/invoice/pdf", {
-      method: "POST",
-      body: JSON.stringify({ html }),
-    });
-
-    const blob = await res.blob();
+     const pdfBlob = await generatePDFBlob(data);
+    const blob = new Blob([pdfBlob], { type: "application/pdf" });
 
     const url = window.URL.createObjectURL(blob);
 
@@ -272,14 +313,8 @@ function BillingMainSection() {
 
   const handlePrint = async () => {
     if (!data) return;
-    const html = generateHTML(data);
-
-    const res = await fetch("/api/invoice/pdf", {
-      method: "POST",
-      body: JSON.stringify({ html }),
-    });
-
-    const blob = await res.blob();
+     const pdfBlob = await generatePDFBlob(data);
+    const blob = new Blob([pdfBlob], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
 
     const newTab = window.open();
@@ -291,63 +326,94 @@ function BillingMainSection() {
   };
 
   const handleFinalize = async () => {
-    if (!data || !contentRef.current) return;
+    if (!data) return;
+
     setFinalizing(true);
 
-
-
     try {
-     const pdfBlob = await generatePDFBlob(data);
-      const formData = new FormData();
+      // 🔹 Generate PDF
+      const pdfBlob = await generatePDFBlob(data);
 
+      // 🔹 Convert selected items → API format
+      const formattedItems = selectedItems.map((item) => ({
+        productId: item._id,
+        quantity: 1, // currently 1 per selection
+        makingCharge: item.makingCharge || 0,
+      }));
+
+      // 🔹 Build request body (CLEAN + GST READY)
       const body = {
         customerDetails: client,
-        items: selectedItems,
+
+        items: formattedItems,
+
         olditems: oldProducts,
+
         billingDetails: {
           invoiceNumber: invoiceNo,
           invoiceDate: invoiceDate,
+
+          sellerGSTIN: shopDetails?.gstin,
+          placeOfSupply: shopDetails?.stateCode || "20",
+          isInterState: false, // you can make dynamic later
+          goldRatePer10g: shopDetails?.goldRatePer10g,
+          silverRatePerKg: shopDetails?.silverRatePerKg,
+          metalGSTRate: shopDetails?.gstOnMetal,
+          makingGSTRate: shopDetails?.gstOnMakingCharge,
+
           grossWeight,
-          subTotal,
-          ...shopDetails,
-          totalTax,
-          invoiceValue,
-          grandTotal,
+          customDuty: 0,
+          discount: 0,
         },
       };
 
-      formData.append("file",pdfBlob);
+      // 🔹 FormData
+      const formData = new FormData();
+
+      formData.append(
+        "file",
+        new File([pdfBlob], "invoice.pdf", {
+          type: "application/pdf",
+        }),
+      );
+
       formData.append("body", JSON.stringify(body));
+
+      // 🔹 API Call
       const res = await axios.post("/api/create-bill", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
+
       if (res.data.success) {
-        
-        //const resData = await res.json();
+        const url = res.data.pdf;
 
-        console.log(res);
-        
-
-        const url = res?.data?.data
-
-        //console.log("resData: ", resData);
-        console.log("url: ",url);
-        
-        
-
-       const newTab = window.open();
-    if (newTab) {
-      newTab.document.write(`
-    <iframe src="${url}" style="width:100%;height:100%"></iframe>
-  `);
-    }
+        const newTab = window.open();
+        if (newTab) {
+          newTab.document.write(`
+          <iframe src="${url}" style="width:100%;height:100%"></iframe>
+        `);
+        }
       }
     } catch (error: any) {
       console.error("Error finalizing bill:", error.message);
     } finally {
       setFinalizing(false);
+    }
+  };
+
+  const handleEstimatePrint = async() => {
+    if (!data) return;
+    const estimateBlob = await generateEstimateBlob(data);
+
+    const url = URL.createObjectURL(estimateBlob);
+
+    const newTab = window.open();
+    if (newTab) {
+      newTab.document.write(`
+      <iframe src="${url}" style="width:100%;height:100%"></iframe>
+    `);
     }
   };
 
@@ -553,8 +619,7 @@ function BillingMainSection() {
               <div className="border-t mt-2 pt-2">
                 <button
                   onClick={() => {
-                    // open modal / redirect
-                    console.log("Create new product");
+                   setOpenCreateModal(true);
                   }}
                   className="w-full text-center text-[#3C000D] hover:text-[#C9A84C] text-sm"
                   style={{
@@ -606,10 +671,13 @@ function BillingMainSection() {
                       fontWeight: 600,
                     }}
                   >
-                    {fmt(item?.type === "Gold"
-                      ? ((shopDetails?.goldRatePer10g ?? 0) * item.weight) / 10
-                      : ((shopDetails?.silverRatePerKg ?? 0) * item.weight) /
-                        1000)}
+                    {fmt(
+                      item?.type === "Gold"
+                        ? ((shopDetails?.goldRatePer10g ?? 0) * item.weight) /
+                            10
+                        : ((shopDetails?.silverRatePerKg ?? 0) * item.weight) /
+                            1000,
+                    )}
                   </span>
 
                   <button
@@ -721,8 +789,22 @@ function BillingMainSection() {
               fontWeight: 500,
             }}
           >
-            { finalizing ? "Finalizing..." : "Finalize Bill" }
+            {finalizing ? "Finalizing..." : "Finalize Bill"}
           </button>
+        </div>
+        <div className="flex gap-3">
+          <button
+              className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] mx-auto w-full justify-center py-4 rounded-md tracking-[0.06em] transition-colors duration-200"
+              style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "14px",
+                fontWeight: 600,
+              }}
+              onClick={handleEstimatePrint}
+            >
+              <Printer size={16} strokeWidth={2} />
+              Print Estimate Bill
+            </button>
         </div>
       </div>
       {openCreateModal && (
@@ -790,28 +872,10 @@ function BillingMainSection() {
 
         {/* Invoice Card */}
         {/* <InvoiceTemplate data={data} /> */}
-        <div ref={contentRef} className=" w-full h-screen">
-          {data && (
-             <GSTInvoice data={data} />
-          )}
+        <div ref={contentRef} className=" w-full min:h-screen">
+          {data && <GSTInvoice data={data} />}
         </div>
-        {/* <div>
-        <PDFViewer
-         width="100%"
-        height="100%"
-        style={{
-          border: "none",
-          backgroundColor: "#ffffff",
-        }}
-        showToolbar={false}
-        >
-          <div>
-            {data && (
-            <GSTInvoicePDF data={data} />
-          )}
-          </div>
-        </PDFViewer>
-      </div> */}
+        {/* <PDFViewer width="100%" height={900}><GSTInvoicePDF data={data!} /></PDFViewer> */}
       </div>
     </div>
   );

@@ -24,6 +24,7 @@ import { signOut, useSession } from "next-auth/react";
 import axios from "axios";
 import { set } from "mongoose";
 import { json } from "zod";
+import { useRouter } from "next/navigation";
 
 // ── Types ──────────────────────────────────────────────
 type IShop = {
@@ -34,14 +35,13 @@ type IShop = {
   email: string;
   accountNumber: string;
   ifscCode: string;
+  termsAndConditions: string;
   goldRatePer10g: string;
   silverRatePerKg: string;
-  sgst: string;
-  cgst: string;
-  igst: string;
-  gstOnMakingCharge: string;
+  stateCode?: string;
   customDuty: string;
-  termsAndConditions: string;
+  gstOnMetal: string;
+  gstOnMakingCharge: string;
 };
 
 type UserProfile = {
@@ -64,10 +64,8 @@ const INITIAL_PROFILE: UserProfile = {
     ifscCode: "SBIN0001234",
     goldRatePer10g: "72,450",
     silverRatePerKg: "89,200",
-    sgst: "9",
-    cgst: "9",
-    igst: "0",
-    gstOnMakingCharge: "18",
+    gstOnMetal:"3",
+    gstOnMakingCharge: "5",
     customDuty: "0",
     termsAndConditions:
       "All luxury items are certified by the National Gemological Institute. Return policy applies within 14 days for exchange only. Gold rates are subject to daily market revision.",
@@ -185,10 +183,13 @@ export default function ProfileDropdown() {
   const ref = useRef<HTMLDivElement>(null);
   const [user, setUser] = useState<User | null>(null);
 
+  const router = useRouter();
+
   const { data: session } = useSession();
 
   useEffect(() => {
     if (!session || !session.user) {
+      router.replace("/sign-in");
       return;
     }
     setUser(session.user as User);
@@ -613,7 +614,7 @@ export default function ProfileDropdown() {
                   Multiple Tax Rates
                 </SectionLabel>
                 <div className="grid grid-cols-2 gap-3">
-                  {/* SGST Rate */}
+                  {/* METALGST Rate */}
                   <div
                     className="rounded-lg px-4 py-3"
                     style={{
@@ -630,14 +631,14 @@ export default function ProfileDropdown() {
                         fontWeight: 700,
                       }}
                     >
-                      SGST Rate %
+                      GST ON METAL Rate %
                     </p>
                     {editing ? (
                       <input
                         type="text"
-                        value={draft?.sgst ?? ""}
+                        value={draft?.gstOnMetal ?? ""}
                         onChange={(e) =>
-                          setDraftField("sgst", e.target.value)
+                          setDraftField("gstOnMetal", e.target.value)
                         }
                         className="w-full bg-transparent text-[#5C3D00] focus:outline-none border-b border-[#C9A84C]"
                         style={{
@@ -655,13 +656,13 @@ export default function ProfileDropdown() {
                           fontWeight: 700,
                         }}
                       >
-                        {draft?.sgst || "0"} %
+                        {draft?.gstOnMetal || "0"} %
                       </p>
                     )}
                   </div>
 
                   {/* CGST Rate */}
-                  <div
+                  {/* <div
                     className="rounded-lg px-4 py-3"
                     style={{
                       background:
@@ -705,9 +706,9 @@ export default function ProfileDropdown() {
                         {draft?.cgst || "0"} %
                       </p>
                     )}
-                  </div>
+                  </div> */}
                   {/* IGST Rate */}
-                  <div
+                  {/* <div
                     className="rounded-lg px-4 py-3"
                     style={{
                       background:
@@ -751,7 +752,7 @@ export default function ProfileDropdown() {
                         {draft?.igst || "0"} %
                       </p>
                     )}
-                  </div>
+                  </div> */}
                   {/* GST on Making Charge */}
                   <div
                     className="rounded-lg px-4 py-3"
@@ -799,7 +800,7 @@ export default function ProfileDropdown() {
                     )}
                   </div>
                   {/* Custom Duty */}
-                  <div
+                  {/* <div
                     className="rounded-lg px-4 py-3"
                     style={{
                       background:
@@ -843,7 +844,7 @@ export default function ProfileDropdown() {
                         {draft?.customDuty || "0"} %
                       </p>
                     )}
-                  </div>
+                  </div> */}
 
                 </div>
               </div>

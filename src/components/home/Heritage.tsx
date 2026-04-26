@@ -17,7 +17,7 @@ export default function HeritageSection() {
             style={{ aspectRatio: "460 / 560" }}
           >
             {/* Placeholder gradient simulating the dark craftsman photo */}
-            <div className="w-full h-full bg-gradient-to-br from-[#1C1209] via-[#3A2518] to-[#5C3D20] opacity-90" />
+            <img src="./Heritage.png" alt="" className="w-full h-full object-cover" />
           </div>
 
           {/* 22k Gold Badge — overlapping bottom-right of image */}

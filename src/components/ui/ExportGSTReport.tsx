@@ -162,7 +162,7 @@ export default function ExportGSTReport() {
       {/* ── Dropdown Panel ── */}
       {open && (
         <div
-          className="absolute right-0 mt-2 z-50 flex flex-col gap-0 overflow-hidden"
+          className="absolute lg:right-0 -left-20 mt-2 z-50 flex flex-col gap-0 overflow-hidden"
           style={{
             width: "clamp(280px, 90vw, 340px)",
             background: "#FFFFFF",

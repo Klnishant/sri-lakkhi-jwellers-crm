@@ -120,6 +120,12 @@ const s = StyleSheet.create({
     color: C.maroon,
     letterSpacing: 0.8,
   },
+  shopTagline: {
+    fontFamily: SERIF_ITALIC,
+    fontSize:10,
+    color: C.maroon,
+    letterSpacing:0.8
+  },
   headerRight: { alignItems: "flex-end", maxWidth: 210 },
   taxLabel: {
     fontFamily: SERIF_BOLD,
@@ -494,9 +500,14 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
             <View style={s.logoCircle}>
               <Image src={Logo.image} style={s.logoImg} />
             </View>
-            <Text style={s.shopName}>
+            <View>
+              <Text style={s.shopName}>
               {shop?.name ?? "SRI LAKHHI JEWELLERS"}
             </Text>
+            <Text style={s.shopTagline}>
+              Since 2000
+            </Text>
+            </View>
           </View>
 
           {/* Right — invoice meta + TAX INVOICE + shop info */}

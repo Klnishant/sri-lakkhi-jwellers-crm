@@ -203,8 +203,6 @@ export default function AddCustomerModal({
     }
 
     if (!form.adress.trim()) e.adress = "Address is required.";
-    if (!form.dob) e.dob = "Date of birth is required.";
-
     if (
       form.dueAmount &&
       (isNaN(Number(form.dueAmount)) || Number(form.dueAmount) < 0)
@@ -349,7 +347,7 @@ export default function AddCustomerModal({
             <div className="grid grid-cols-2 gap-4">
 
               {/* Date of Birth */}
-              <FieldWrapper label="Date of Birth" required error={errors.dob}>
+              <FieldWrapper label="Date of Birth">
                 <InputField
                   icon={<Calendar size={15} strokeWidth={1.6} />}
                   placeholder="DD / MM / YYYY"

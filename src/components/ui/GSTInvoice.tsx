@@ -280,11 +280,11 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
                   letterSpacing: "0.04em",
                 }}
               >
-                {data.shopDetails?.name || "SRI LAKKHI JEWELLERS"}
+                {data?.shopDetails?.name || "SRI LAKKHI JEWELLERS"}
               </p>
-              {/* <p style={{ fontFamily: "'Georgia', serif", fontSize: "11px", color: "#8B6914", letterSpacing: "0.1em" }}>
-                {data.shopTagline}
-              </p> */}
+              <p style={{ fontFamily: "'Georgia', serif", fontSize: "16px", color: "#8B6914", letterSpacing: "0.1em" }}>
+                {"since 2000"}
+              </p>
             </div>
           </div>
 

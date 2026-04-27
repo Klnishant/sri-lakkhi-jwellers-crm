@@ -185,15 +185,22 @@ export default function ProfileDropdown() {
 
   const router = useRouter();
 
-  const { data: session } = useSession();
-
+  const { data: session, status } = useSession();
+  
   useEffect(() => {
-    if (!session || !session.user) {
+    if (status === "loading") return; // ⛔ wait
+  
+    if (status === "unauthenticated") {
       router.replace("/sign-in");
       return;
     }
-    setUser(session.user as User);
-  }, [session]);
+  
+    if (status === "authenticated") {
+      setUser(session.user as User);
+      console.log("User:", session.user);
+      
+    }
+  }, [status, session]);
 
   useEffect(() => {
     const fetchShop = async () => {
@@ -312,7 +319,7 @@ export default function ProfileDropdown() {
       {/* ── Dropdown Panel ── */}
       {open && (
         <div
-          className="absolute right-0 top-[calc(100%+10px)] w-[360px] rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col"
+          className="absolute right-0 top-[calc(100%+10px)]  md:w-[360px]  rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col"
           style={{
             background: "#FFFFFF",
             maxHeight: "82vh",
@@ -382,7 +389,7 @@ export default function ProfileDropdown() {
                       fontWeight: 700,
                     }}
                   >
-                    {user?.role || "User"}
+                    {user?.role}
                   </span>
                 </span>
               </div>
@@ -390,7 +397,7 @@ export default function ProfileDropdown() {
           </div>
 
           {/* ── Scrollable body ── */}
-          {user?.role === "staff" && (
+          {user?.role === "owner" && (
             <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
               {/* ── Shop Details Section ── */}
               <div>

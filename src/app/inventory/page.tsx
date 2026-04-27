@@ -158,6 +158,8 @@ function MainSection() {
     const { data: session, status } = useSession();
 
 useEffect(() => {
+  console.log(session);
+  
   if (status === "loading") return; // ⛔ wait
 
   if (status === "unauthenticated") {

@@ -12,7 +12,7 @@ type LocationInfo = {
 };
 
 const location: LocationInfo = {
-  name: "SRI LAKHHI JEWELLERS",
+  name: "SRI LAKKHI JEWELLERS",
   addressLine1: "DARGAH ROAD NEAR GANDHI CHOWK TAJPUR",
   addressLine2: "Samastipur, Bihar 848130",
   phone: "+91 98300 12345",

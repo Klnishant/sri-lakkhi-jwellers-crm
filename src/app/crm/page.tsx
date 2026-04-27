@@ -89,23 +89,29 @@ const [searchExisting, setSearchExisting] = useState("");
       const router = useRouter();
     
       const { data: session, status } = useSession();
+
+useEffect(() => {
+  console.log(session);
   
-  useEffect(() => {
-    if (status === "loading") return; // ⛔ wait
-  
-    if (status === "unauthenticated") {
-      router.replace("/sign-in");
-      return;
-    }
-  
-    if (status === "authenticated") {
-      setUser(session.user as User);
-    }
-  
-    if (status === "authenticated" && session.user?.verified === false && session.user?.role !== "owner") {
-    router.replace("/");
+  if (status === "loading") return; // ⛔ wait
+
+  if (status === "unauthenticated") {
+    router.replace("/sign-in");
+    return;
   }
-  }, [status, session]);
+
+  if (status === "authenticated") {
+    setUser(session.user as User);
+  }
+
+  if (status === "authenticated" && session.user?.verified === false) {
+  router.replace("/");
+}
+
+if (status === "authenticated" && session.user?.verified === true && session.user?.role != "owner") {
+  router.back();
+}
+}, [status, session]);
 
   useEffect(() => {
     setLoading(true);

@@ -177,7 +177,7 @@ function ToggleField({
         className={`relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0 ${value ? "bg-[#6B1A1A]" : "bg-[#DDD0C4]"}`}
       >
         <span
-          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${value ? "translate-x-5" : "translate-x-0.5"}`}
+          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${value ? "translate-x-0.5" : "-translate-x-4.5"}`}
         />
       </button>
     </div>

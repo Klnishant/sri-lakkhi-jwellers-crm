@@ -8,11 +8,13 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/src/components/ui/use-toast";
 import { signIn } from "next-auth/react";
+import { set } from "mongoose";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error,setError] = useState("");
 
   const router = useRouter();
   const { toast } = useToast();
@@ -26,6 +28,7 @@ export default function LoginPage() {
           description: "Please fill in all fields",
           variant: "destructive",
         });
+        setError("Please fill in all fields");
         return;
       }
 
@@ -36,6 +39,9 @@ export default function LoginPage() {
         password: password,
       });
 
+      console.log("Response: ",response);
+      
+
       if (response?.error) {
         if (response.error === "credentialsSignIn") {
           toast({
@@ -43,24 +49,27 @@ export default function LoginPage() {
             description: "invalid username or password",
             variant: "destructive",
           });
+          setError("invalid username or password");
         } else {
           toast({
             title: "Error",
             description: response?.error,
             variant: "destructive",
           });
+          setError(response?.error);
         }
       }
 
-      if (response?.url) {
-        router.replace("/crm");
-      }
+      if (response?.ok) {
+  router.replace("/");
+}
     } catch (error: any) {
       toast({
         title: "Error occured while log in",
         description: error.message,
         variant: "destructive",
       });
+      setError(error.message);
     }
   };
 
@@ -272,6 +281,8 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+
+          <p className="text-[#6B1A1A]">{error}</p>
 
           {/* Sign In Button */}
           <button

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { IUser } from "@/src/models/User";
 import axios from "axios";
+import { useSession } from "next-auth/react";
 
 // ── Types ──────────────────────────────────────────────
 type UserRole = "owner" | "staff";
@@ -336,6 +337,8 @@ export default function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
+  const { update } = useSession();
+
   useEffect(() => {
     setLoading(true);
     const fetchUser = async () => {
@@ -377,6 +380,9 @@ export default function UserManagement() {
       };
       const response = await axios.patch("/api/edit-user", body);
       if (!response.data.success) throw new Error(response.data.error);
+      await update({
+        verified: true,
+      });
       setUsers((prev) =>
         prev.map((u) =>
           u._id.toString() === id
@@ -412,6 +418,12 @@ export default function UserManagement() {
       };
       const response = await axios.patch("/api/edit-user", body);
       if (!response.data.success) throw new Error(response.data.error);
+      await update({
+        role:
+          users.find((u) => u._id.toString() === id)?.role === "owner"
+            ? "staff"
+            : "owner",
+      });
       setUsers((prev) =>
         prev.map((u) =>
           u._id.toString() === id

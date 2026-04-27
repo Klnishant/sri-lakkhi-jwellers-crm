@@ -428,6 +428,11 @@ useEffect(() => {
                     <span className="text-[#9E8A7E]">Purity</span>
                     <PurityBadge label={item?.purity} />
 
+                    <span className="text-[#9E8A7E]">Stocks</span>
+                    <span className="text-[#2C1A0E] font-semibold">
+                      {item?.stock} pcs
+                    </span>
+
                     <span className="text-[#9E8A7E]">Type</span>
                     <span className="text-[#5C4A3A]">{item?.type}</span>
 

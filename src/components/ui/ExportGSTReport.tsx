@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
+import { ISHOP } from "@/src/models/Shop";
+import axios from "axios";
 
 // ── Types ──────────────────────────────────────────────
 type ReportType = "gstr1" | "gstr3b";
@@ -62,8 +64,24 @@ export default function ExportGSTReport() {
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState<string | null>(null);
   const [success, setSuccess]       = useState(false);
+  const [shop, setShop]             = useState<ISHOP | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+   useEffect(() => {
+    const fetchShop = async () => {
+      try {
+        const response = await axios.get("/api/get-shop");
+        if (response.data.success) {
+          setShop(response.data.shop);
+          console.log("Fetched shop details: ", response.data.shop);
+        }
+      } catch (error) {
+        console.error("Failed to fetch shop details:", error);
+      }
+    };
+    fetchShop();
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -90,8 +108,12 @@ export default function ExportGSTReport() {
     setSuccess(false);
     setLoading(true);
 
+    const body = {
+      gstin: shop?.gstin ?? ""
+    };
+
     try {
-      const res = await fetch(`/api/${reportType}?from=${from}&to=${to}`);
+      const res = await fetch(`/api/${reportType}?from=${from}&to=${to}&gstin=${shop?.gstin ?? ""}`);
 
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
 

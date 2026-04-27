@@ -12,6 +12,7 @@ export async function GET(req: Request) {
 
   try {
     const { searchParams } = new URL(req.url);
+    const gstin = searchParams.get("gstin");
     const from = new Date(searchParams.get("from")!);
     const to = new Date(searchParams.get("to")!);
 
@@ -61,7 +62,7 @@ export async function GET(req: Request) {
     // 🔥 GST PORTAL JSON FORMAT
     // =========================
     const gstr3bJSON = {
-      gstin: "YOUR_GSTIN",
+      gstin: gstin ?? "",
       ret_period: `${from.getMonth() + 1}${from.getFullYear()}`,
 
       outward_supplies: {

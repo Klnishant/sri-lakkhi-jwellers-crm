@@ -100,6 +100,7 @@ function InputField({
   onChange,
   type = "text",
   hasError,
+  min,
 }: {
   icon: React.ReactNode;
   placeholder: string;
@@ -107,6 +108,7 @@ function InputField({
   onChange: (v: string) => void;
   type?: string;
   hasError?: boolean;
+  min?: string;
 }) {
   return (
     <div
@@ -122,6 +124,7 @@ function InputField({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        min={min}
         className="flex-1 bg-transparent text-[#3D2B1F] placeholder-[#C8B8A8] text-[13px] focus:outline-none"
         style={{ fontFamily: "'Georgia', serif" }}
       />
@@ -410,6 +413,7 @@ export default function EditCustomerModal({
                   value={form?.dueAmount?.toString() ?? ""}
                   onChange={(v) => set("dueAmount", v)}
                   type="number"
+                  min="0"
                   hasError={!!errors.dueAmount}
                 />
               </FieldWrapper>
@@ -425,6 +429,7 @@ export default function EditCustomerModal({
                   value={form?.advanceAmount?.toString() ?? ""}
                   onChange={(v) => set("advanceAmount", v)}
                   type="number"
+                  min="0"
                   hasError={!!errors.advanceAmount}
                 />
               </FieldWrapper>

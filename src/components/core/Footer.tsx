@@ -25,7 +25,7 @@ export default function Footer() {
             textTransform: "uppercase",
           }}
         >
-          © {year} Lakhhi Jewellers. All Rights Reserved.
+          © {year} Lakkhi Jewellers. All Rights Reserved.
         </p>
 
       </div>

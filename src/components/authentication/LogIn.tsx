@@ -74,18 +74,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex">
       {/* ── Left Panel: Brand / Image ── */}
       <div
-        className="hidden lg:flex flex-col justify-between w-[58%] relative overflow-hidden px-14 py-14"
+        className="hidden lg:flex flex-col justify-between w-[58%] relative overflow-hidden"
         style={{
           background:
             "radial-gradient(ellipse at 60% 40%, #2A1A4A 0%, #150D2E 40%, #0D0820 100%)",
         }}
       >
         {/* Subtle dark circle overlays (decorative depth) */}
-        <div className="absolute top-[10%] left-[5%] w-64 h-64 rounded-full bg-[#1A0F35]/60 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[20%] right-[10%] w-48 h-48 rounded-full bg-[#1A0F35]/40 blur-2xl pointer-events-none" />
+        {/* <div className="absolute top-[10%] left-[5%] w-64 h-64 rounded-full bg-[#1A0F35]/60 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-[20%] right-[10%] w-48 h-48 rounded-full bg-[#1A0F35]/40 blur-2xl pointer-events-none" /> */}
 
         {/* Marquee text — top */}
         {/* <div className="relative z-10 overflow-hidden">
@@ -109,11 +109,12 @@ export default function LoginPage() {
         */}
         <div className="relative z-10 flex-1 flex items-center justify-center">
           <div
-            className="w-full max-w-[420px] rounded-xl"
+            className=" rounded-xl"
             style={{ aspectRatio: "1 / 1" }}
           >
             {/* Deep purple gradient placeholder matching jewellery photo bg */}
-            <div className="w-full h-full rounded-xl bg-gradient-to-br from-[#2A1A4A] via-[#1A1035] to-[#0D0820]" />
+            {/* <div className="w-full h-full rounded-xl bg-gradient-to-br from-[#2A1A4A] via-[#1A1035] to-[#0D0820]" /> */}
+            <img src="./Shop-Location.jpeg" alt="" className="w-full h-full ocject-cover" />
           </div>
         </div>
 
@@ -320,7 +321,7 @@ export default function LoginPage() {
             fontWeight: 400,
           }}
         >
-          © 2024 Lakhhi Jewellers. All Rights Reserved.
+          {/* © 2024 Lakhhi Jewellers. All Rights Reserved. */}
         </p>
       </div>
 

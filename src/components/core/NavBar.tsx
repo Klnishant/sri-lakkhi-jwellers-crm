@@ -7,6 +7,7 @@ import Image from "next/image";
 import { User } from "next-auth";
 import { useSession } from "next-auth/react";
 import ProfileDropdown from "../ui/Profiledropdown";
+import { usePathname } from "next/navigation";
 
 type NavItem = {
   label: string;
@@ -24,6 +25,8 @@ export default function NavBar() {
   const [activeItem, setActiveItem] = useState<string>("HOME");
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+
+  const pathname = usePathname();
 
   const {data: session} = useSession()
 
@@ -58,7 +61,7 @@ export default function NavBar() {
                   className={`
                     relative text-[13px] font-semibold tracking-[0.12em] transition-colors duration-200 pb-1
                     ${
-                      isActive
+                      (item.href === pathname)
                         ? "text-[#8B6914]"
                         : "text-[#3D2B1F] hover:text-[#8B6914]"
                     }
@@ -67,7 +70,7 @@ export default function NavBar() {
                 >
                   {item.label}
                   {/* Active underline */}
-                  {isActive && (
+                  {(item.href === pathname) && (
                     <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#8B6914] rounded-full" />
                   )}
                 </Link>

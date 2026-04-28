@@ -15,7 +15,7 @@ const location: LocationInfo = {
   name: "SRI LAKKHI JEWELLERS",
   addressLine1: "DARGAH ROAD NEAR GANDHI CHOWK TAJPUR",
   addressLine2: "Samastipur, Bihar 848130",
-  phone: "+91 98300 12345",
+  phone: "+91 9631028016",
   hours: [
     { days: "Mon – Sat:", time: "10:30 AM – 8:30 PM" },
     { days: "Sunday:", time: "11:00 AM – 6:00 PM" },

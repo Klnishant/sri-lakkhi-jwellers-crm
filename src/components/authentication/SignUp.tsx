@@ -84,19 +84,19 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex">
 
       {/* ── Left Panel: Brand ── */}
       <div
-        className="hidden lg:flex flex-col justify-between w-[56%] relative overflow-hidden px-14 py-14"
+        className="hidden lg:flex flex-col justify-between w-[56%] relative overflow-hidden"
         style={{
           background:
             "radial-gradient(ellipse at 55% 45%, #2A1A0E 0%, #1C0F0A 45%, #0E0806 100%)",
         }}
       >
         {/* Decorative glow blobs */}
-        <div className="absolute top-[15%] left-[8%] w-72 h-72 rounded-full bg-[#8B2020]/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[25%] right-[5%] w-56 h-56 rounded-full bg-[#C9A84C]/8 blur-2xl pointer-events-none" />
+        {/* <div className="absolute top-[15%] left-[8%] w-72 h-72 rounded-full bg-[#8B2020]/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-[25%] right-[5%] w-56 h-56 rounded-full bg-[#C9A84C]/8 blur-2xl pointer-events-none" /> */}
 
         {/* Top marquee */}
         {/* <div className="relative z-10 overflow-hidden">
@@ -163,11 +163,12 @@ export default function SignupPage() {
               <div className="w-16 h-px bg-[#C9A84C]/40" />
             </div> */}
           </div>
+          <img src="./Shop-Location.jpeg" alt="" className="w-full h-full object-cover" />
         </div>
 
         {/* Bottom copy */}
         <div className="relative z-10">
-          <h2
+          {/* <h2
             className="text-white mb-3"
             style={{
               fontFamily: "'Georgia', 'Times New Roman', serif",
@@ -179,14 +180,14 @@ export default function SignupPage() {
             Begin Your Heritage
             <br />
             Journey Today.
-          </h2>
-          <p
+          </h2> */}
+          {/* <p
             className="text-white/40 max-w-[360px] leading-[1.7]"
             style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
           >
             Create your account to access the vault of timeless craftsmanship
             and bespoke luxury at Lakhhi Jewellers.
-          </p>
+          </p> */}
 
           {/* Bottom marquee */}
           {/* <div className="overflow-hidden mt-6">
@@ -200,10 +201,10 @@ export default function SignupPage() {
         </div>
 
         {/* Gold corner accent */}
-        <div
+        {/* <div
           className="absolute bottom-0 right-0 w-24 h-24 pointer-events-none"
           style={{ background: "linear-gradient(135deg, transparent 50%, #C9A84C 50%)" }}
-        />
+        /> */}
       </div>
 
       {/* ── Right Panel: Signup Form ── */}
@@ -405,7 +406,7 @@ export default function SignupPage() {
           className="text-center text-[#B8A898] tracking-[0.12em] uppercase"
           style={{ fontFamily: "'Georgia', serif", fontSize: "10px" }}
         >
-          © 2024 Lakhhi Jewellers. All Rights Reserved.
+          {/* © 2024 Lakhhi Jewellers. All Rights Reserved. */}
         </p>
       </div>
 

@@ -87,23 +87,22 @@ export async function POST(req: Request) {
     // 🔹 NON-HUID PRODUCT
     // =========================
     else {
-      product = await Product.findOne({
-        name: item.name,
-        purity: item.purity,
-        type: item.type,
-        isHUID: false,
-      }).session(session);
+      // product = await Product.findOne({
+      //   name: item.name,
+      //   purity: item.purity,
+      //   type: item.type,
+      //   isHUID: false,
+      // }).session(session);
 
-      if (!product) {
-        const created = await Product.create(
+      const created = await Product.create(
           [{
             name: item.name,
             description: item.description || "",
             weight: item.weight,
             price: item.metalValue,
-            stock: 0,
-            stockQuantity: 0,
-            stockValue: 0,
+            stock: item.quantity,
+            stockQuantity: item.quantity,
+            stockValue: (item.metalValue + item.makingCharge) * item.quantity,
             type: item.type,
             purity: item.purity,
             makingCharge: item.makingCharge,
@@ -113,21 +112,20 @@ export async function POST(req: Request) {
           { session }
         );
         product = created[0];
-      }
 
       const value = (item.metalValue + item.makingCharge) * item.quantity;
 
-      await Product.findByIdAndUpdate(
-        product._id,
-        {
-          $inc: {
-            stock: item.quantity,
-            stockQuantity: item.quantity,
-            stockValue: value,
-          },
-        },
-        { session }
-      );
+      // await Product.findByIdAndUpdate(
+      //   product._id,
+      //   {
+      //     $inc: {
+      //       stock: item.quantity,
+      //       stockQuantity: item.quantity,
+      //       stockValue: value,
+      //     },
+      //   },
+      //   { session }
+      // );
     }
 
     // =========================

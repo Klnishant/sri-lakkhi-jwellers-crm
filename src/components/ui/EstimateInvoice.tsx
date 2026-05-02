@@ -12,7 +12,7 @@ import {
 } from "@react-pdf/renderer";
 import { toCurrency } from "to-words";
 import { InvoiceData } from "@/src/app/billing/page";
-import { Logo } from "@/src/constants/constants";
+import { hallmarkLogo, Logo } from "@/src/constants/constants";
 import { Font } from "@react-pdf/renderer";
 
 Font.register({
@@ -101,7 +101,6 @@ const s = StyleSheet.create({
   },
   headerLeft: {
     flexDirection: "row",
-    alignItems: "center",
     flex: 1,
   },
   logoCircle: {
@@ -109,11 +108,23 @@ const s = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     overflow: "hidden",
-    borderWidth: 2,
-    borderColor: C.gold,
     marginRight: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  logoImg: { width: 56, height: 56 },
+  logoImg: { width: 56, height: 56, resizeMode: "cover", borderRadius: 28, borderWidth: 2,
+    borderColor: C.gold, },
+  hallMarkLogo: {
+    width: 36,
+    height: 36,
+    resizeMode: "cover",
+  },
+  hallMarkLogoImg: {
+  width: 60,
+  height: 40,
+  marginTop: 4,
+  objectFit: "contain",
+},
   shopName: {
     fontFamily: SERIF_BOLD,
     fontSize: 30,
@@ -446,12 +457,18 @@ export function EstimateInvoice({ data }: { data: InvoiceData }) {
   data.items.forEach((item) => {
     const rate =
       item.type === "Gold"
-        ? (shop?.goldRatePer10g ?? 0) / 10 + (shop?.gstOnMetal ?? 0)*(shop?.goldRatePer10g ?? 0) / 1000
-        : (shop?.silverRatePerKg ?? 0) / 1000 + (shop?.gstOnMetal ?? 0)*(shop?.silverRatePerKg ?? 0) / 10000;
-    metalValue += rate * item.weight;
-    makingValue += (item.makingCharge ?? 0) + (shop?.gstOnMakingCharge ?? 0)*(item.makingCharge ?? 0)/100;
-  });
+        ? (item?.purity === "18k"
+                        ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) * 0.75
+                        : item?.purity === "22k"
+                          ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                            0.916
+                          : (data.shopDetails?.goldRatePer10g ?? 0) / 10
+                      )
+        : (data.shopDetails?.silverRatePerKg ?? 0) / 1000;
 
+    metalValue += rate * item.weight;
+    makingValue += item.makingCharge ?? 0;
+  });
   const gstOnMetal = shop?.gstOnMetal ?? 0;
   const gstOnMaking = shop?.gstOnMakingCharge ?? 0;
 
@@ -463,8 +480,9 @@ export function EstimateInvoice({ data }: { data: InvoiceData }) {
   
 
   const subTotal = metalValue + makingValue;
+  const totalDiscount = ((subTotal * (data?.discount ?? 0)) / 100);
   //const totalTax = cgst + sgst + igst;
-  const invoiceValue = subTotal;
+  const invoiceValue = subTotal - totalDiscount;
   const oldDeduction = data.oldItems?.reduce((s, i) => s + i.price, 0) ?? 0;
   const grandTotal = invoiceValue - oldDeduction;
   const grossWeight = data.items.reduce((s, i) => s + i.weight, 0);
@@ -487,9 +505,12 @@ export function EstimateInvoice({ data }: { data: InvoiceData }) {
         <View style={s.headerRow}>
           {/* Left — logo + shop name */}
           <View style={s.headerLeft}>
-            <View style={s.logoCircle}>
-              <Image src={Logo.image} style={s.logoImg} />
-            </View>
+            <View>
+                         <View style={s.logoCircle}>
+                          <Image src={Logo.image} style={s.logoImg} />
+                        </View>
+                        <Image src={hallmarkLogo.image} style={s.hallMarkLogoImg} />
+                       </View>
             <View>
               <Text style={s.shopName}>
               {shop?.name ?? "SRI LAKKHI JEWELLERS"}
@@ -560,9 +581,15 @@ export function EstimateInvoice({ data }: { data: InvoiceData }) {
           {/* Item rows */}
           {data.items.map((item, idx) => {
             const rate =
-  item.type === "Gold"
-    ? (shop?.goldRatePer10g ?? 0) / 10 + (shop?.goldRatePer10g ?? 0) * (data?.shopDetails?.gstOnMetal ?? 0) / 1000
-    : (shop?.silverRatePerKg ?? 0) / 1000 + (shop?.silverRatePerKg ?? 0) * (data?.shopDetails?.gstOnMetal ?? 0) / 10000;
+              item.type === "Gold"
+                    ? (item?.purity === "18k"
+                        ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) * 0.75
+                        : item?.purity === "22k"
+                          ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                            0.916
+                          : (data.shopDetails?.goldRatePer10g ?? 0) / 10
+                      )
+                : (shop?.silverRatePerKg ?? 0) / 1000;
             const taxable = rate * item.weight + (item.makingCharge ?? 0) + ((item.makingCharge ?? 0) * (data?.shopDetails?.gstOnMakingCharge ?? 0)) / 100;
 
             return (
@@ -731,6 +758,7 @@ export function EstimateInvoice({ data }: { data: InvoiceData }) {
             <TaxRow label="SGST (Split GST)" value={fmtINR(sgst)} alt />
             <TaxRow label="IGST (If Applicable)" value={fmtINR(igst)} />
             <TaxRow label="Total Tax Amt" value={fmtINR(totalTax)} bold alt /> */}
+            <TaxRow label="Total Discounts" value={`${fmtINR(totalDiscount)}(${(data?.discount)}%)`} />
             <TaxRow label="Invoice Value" value={fmtINR(invoiceValue)} />
             <TaxRow
               label="Grand Total"

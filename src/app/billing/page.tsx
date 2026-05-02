@@ -60,6 +60,7 @@ export interface InvoiceData {
   items: IPRODUCTS[];
   oldItems?: IProduct[];
   shopDetails?: ISHOP | null;
+  discount?: number;
 }
 
 // ── Helpers ────────────────────────────────────────────
@@ -138,6 +139,7 @@ function BillingMainSection() {
   const [data, setData] = useState<InvoiceData | null>(null);
   const [shopDetails, setShopDetails] = useState<ISHOP | null>(null);
   const [finalizing, setFinalizing] = useState(false);
+  const [discount, setDiscount] = useState(0);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -159,26 +161,26 @@ function BillingMainSection() {
   ]);
 
   const [user, setUser] = useState<User | null>(null);
-    
-      const router = useRouter();
-    
-      const { data: session, status } = useSession();
-  
+
+  const router = useRouter();
+
+  const { data: session, status } = useSession();
+
   useEffect(() => {
     if (status === "loading") return; // ⛔ wait
-  
+
     if (status === "unauthenticated") {
       router.replace("/sign-in");
       return;
     }
-  
+
     if (status === "authenticated") {
       setUser(session.user as User);
     }
-  
+
     if (status === "authenticated" && session.user?.verified === false) {
-    router.replace("/");
-  }
+      router.replace("/");
+    }
   }, [status, session]);
 
   const grossWeight = selectedItems.reduce((s, i) => s + i.weight, 0);
@@ -206,7 +208,7 @@ function BillingMainSection() {
         100,
     ) / 100;
   const totalTax = cgst + sgst;
-  const invoiceValue = subTotal + totalTax;
+  const invoiceValue = subTotal - (subTotal * discount) / 100 + totalTax;
   const grandTotal =
     invoiceValue - (oldProducts?.reduce((s, i) => s + i.price, 0) ?? 0);
   const invoiceDate = new Date().toLocaleDateString("en-IN", {
@@ -215,6 +217,16 @@ function BillingMainSection() {
     year: "numeric",
   });
   const invoiceNo = `${new Date().getUTCFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}/${new Date().getTime()}`;
+
+  const updateMakingCharge = (id: string, value: number) => {
+    setSelectedItems((prev) =>
+      prev.map((item) =>
+        item._id.toString() === id
+          ? ({ ...item, makingCharge: value } as IPRODUCTS)
+          : item,
+      ),
+    );
+  };
 
   const removeItem = (id: string) => {
     setSelectedItems((prev) => prev.filter((i) => i._id.toString() !== id));
@@ -283,6 +295,7 @@ function BillingMainSection() {
       items: selectedItems,
       oldItems: oldProducts,
       shopDetails: shopDetails,
+      discount: discount,
     });
   }, [client, selectedItems, oldProducts, shopDetails]);
 
@@ -296,11 +309,11 @@ function BillingMainSection() {
   const generateEstimateBlob = async (data: any) => {
     const blob = await pdf(<EstimateInvoice data={data} />).toBlob();
     return blob;
-  }
+  };
 
   const handleDownload = async () => {
     if (!data) return;
-     const pdfBlob = await generatePDFBlob(data);
+    const pdfBlob = await generatePDFBlob(data);
     const blob = new Blob([pdfBlob], { type: "application/pdf" });
 
     const url = window.URL.createObjectURL(blob);
@@ -313,7 +326,7 @@ function BillingMainSection() {
 
   const handlePrint = async () => {
     if (!data) return;
-     const pdfBlob = await generatePDFBlob(data);
+    const pdfBlob = await generatePDFBlob(data);
     const blob = new Blob([pdfBlob], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
 
@@ -403,7 +416,7 @@ function BillingMainSection() {
     }
   };
 
-  const handleEstimatePrint = async() => {
+  const handleEstimatePrint = async () => {
     if (!data) return;
     const estimateBlob = await generateEstimateBlob(data);
 
@@ -577,7 +590,17 @@ function BillingMainSection() {
                     <div
                       key={p._id.toString()}
                       onClick={() => {
-                        setSelectedItems((prev) => [p, ...prev]);
+                        // when adding item
+                        setSelectedItems((prevSelectedItems) => {
+                          const updatedItems = [
+                            ...prevSelectedItems,
+                            {
+                              ...p,
+                              makingCharge: p.makingCharge ?? 0,
+                            } as IPRODUCTS,
+                          ];
+                          return updatedItems;
+                        });
                         if (p?.stock >= 1) {
                           setProducts((prev) =>
                             prev.map((i) =>
@@ -619,7 +642,7 @@ function BillingMainSection() {
               <div className="border-t mt-2 pt-2">
                 <button
                   onClick={() => {
-                   setOpenCreateModal(true);
+                    setOpenCreateModal(true);
                   }}
                   className="w-full text-center text-[#3C000D] hover:text-[#C9A84C] text-sm"
                   style={{
@@ -673,12 +696,36 @@ function BillingMainSection() {
                   >
                     {fmt(
                       item?.type === "Gold"
-                        ? ((shopDetails?.goldRatePer10g ?? 0) * item.weight) /
-                            10
+                        ? (item?.purity === "18k"
+                            ? ((shopDetails?.goldRatePer10g ?? 0) / 10) * 0.75
+                            : item?.purity === "22k"
+                              ? ((shopDetails?.goldRatePer10g ?? 0) / 10) *
+                                0.916
+                              : (shopDetails?.goldRatePer10g ?? 0) / 10) *
+                            item.weight
                         : ((shopDetails?.silverRatePerKg ?? 0) * item.weight) /
                             1000,
                     )}
                   </span>
+
+                  {/* Making Charge (editable, inline, theme-safe) */}
+                  <input
+                    type="number"
+                    value={item.makingCharge ?? ""}
+                    onChange={(e) =>
+                      updateMakingCharge(
+                        item._id.toString(),
+                        Number(e.target.value),
+                      )
+                    }
+                    className="bg-transparent border-none outline-none text-right"
+                    style={{
+                      fontFamily: "'Georgia', serif",
+                      fontSize: "12px",
+                      color: "#9E8A7E", // same muted tone already used
+                      width: "60px",
+                    }}
+                  />
 
                   <button
                     onClick={() => {
@@ -777,6 +824,40 @@ function BillingMainSection() {
           </div>
         </div>
 
+        <div className="flex flex-col justify-between mb-4">
+            <p
+              className="text-[#8B6914] tracking-[0.15em] uppercase"
+              style={{
+                fontFamily: "'Georgia', serif",
+                fontSize: "11px",
+                fontWeight: 600,
+              }}
+            >
+              Discounts Section
+            </p>
+           <div className="flex mt-3 gap-3 w-12">
+             <FormInput
+                label="Discounts"
+                placeholder="10%"
+                type="number"
+                value={discount.toString() || ''}
+                onChange={(v) => {
+                  setDiscount(
+                    Number(v) > 100 ? 100 : Number(v) < 0 ? 0 : Number(v),
+                  );
+                  setData((prev) => {
+                    return {
+                      ...prev,
+                      discount: Number(v) > 100 ? 100 : Number(v) < 0 ? 0 : Number(v),
+                    } as InvoiceData;
+                  })
+                }
+                }
+                className="flex-1"
+              />
+           </div>
+          </div>
+
         {/* Action Buttons */}
         <div className="flex gap-3 mt-2">
           <button
@@ -794,17 +875,17 @@ function BillingMainSection() {
         </div>
         <div className="flex gap-3">
           <button
-              className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] mx-auto w-full justify-center py-4 rounded-md tracking-[0.06em] transition-colors duration-200"
-              style={{
-                fontFamily: "'Georgia', serif",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}
-              onClick={handleEstimatePrint}
-            >
-              <Printer size={16} strokeWidth={2} />
-              Print Estimate Bill
-            </button>
+            className="flex items-center gap-2 bg-[#C9A84C] hover:bg-[#B8943C] text-[#3D2000] mx-auto w-full justify-center py-4 rounded-md tracking-[0.06em] transition-colors duration-200"
+            style={{
+              fontFamily: "'Georgia', serif",
+              fontSize: "14px",
+              fontWeight: 600,
+            }}
+            onClick={handleEstimatePrint}
+          >
+            <Printer size={16} strokeWidth={2} />
+            Print Estimate Bill
+          </button>
         </div>
       </div>
       {openCreateModal && (

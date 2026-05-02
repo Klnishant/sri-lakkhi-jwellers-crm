@@ -197,7 +197,13 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
   data.items.forEach((item) => {
     const rate =
       item.type === "Gold"
-        ? (data.shopDetails?.goldRatePer10g ?? 0) / 10
+        ? (item?.purity === "18k"
+                        ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) * 0.75
+                        : item?.purity === "22k"
+                          ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                            0.916
+                          : (data.shopDetails?.goldRatePer10g ?? 0) / 10
+                      )
         : (data.shopDetails?.silverRatePerKg ?? 0) / 1000;
 
     metalValue += rate * item.weight;
@@ -206,7 +212,8 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
 
   // 🔥 GST RULES
   const metalGST = (metalValue * (data?.shopDetails?.gstOnMetal ?? 0)) / 100;
-  const makingGST = (makingValue * (data?.shopDetails?.gstOnMakingCharge ?? 0)) / 100;
+  const makingGST =
+    (makingValue * (data?.shopDetails?.gstOnMakingCharge ?? 0)) / 100;
 
   let cgst = 0,
     sgst = 0,
@@ -220,8 +227,9 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
   }
 
   const subTotal = metalValue + makingValue;
+  const totalDiscount = ((subTotal * (data?.discount ?? 0)) / 100);
   const totalTax = cgst + sgst + igst;
-  const invoiceValue = subTotal + totalTax;
+  const invoiceValue = subTotal - totalDiscount + totalTax;
 
   const grandTotal =
     invoiceValue - (data.oldItems?.reduce((s, i) => s + i.price, 0) ?? 0);
@@ -255,9 +263,10 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
         {/* ── HEADER ── */}
         <div className="flex items-start justify-between mb-3">
           {/* Left: Logo + Shop Name */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             {/* Emblem */}
-            <div
+            <div>
+              <div
               className="w-[72px] h-[72px] rounded-full flex items-center justify-center flex-shrink-0"
               style={{
                 background: "linear-gradient(135deg, #6B1A1A 0%, #3A0F0F 100%)",
@@ -269,6 +278,8 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
                 alt=""
                 className="w-full h-full rounded-full object-cover"
               />
+            </div>
+            <img src="./Hallmark-Logo.png" alt="" className="h-15 w-20 mt-4 object-cover" />
             </div>
             <div>
               <p
@@ -282,7 +293,14 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
               >
                 {data?.shopDetails?.name || "SRI LAKKHI JEWELLERS"}
               </p>
-              <p style={{ fontFamily: "'Georgia', serif", fontSize: "16px", color: "#8B6914", letterSpacing: "0.1em" }}>
+              <p
+                style={{
+                  fontFamily: "'Georgia', serif",
+                  fontSize: "16px",
+                  color: "#8B6914",
+                  letterSpacing: "0.1em",
+                }}
+              >
                 {"since 2000"}
               </p>
             </div>
@@ -467,20 +485,45 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
                 <TD className="text-right">{item.huid}</TD>
                 <TD className="text-right">
                   {item.type === "Gold"
-                    ? (
-                        (data.shopDetails?.goldRatePer10g ?? 0) / 10
+                    ? (item?.purity === "18k"
+                        ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) * 0.75
+                        : item?.purity === "22k"
+                          ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                            0.916
+                          : (data.shopDetails?.goldRatePer10g ?? 0) / 10
                       ).toLocaleString("en-IN")
                     : (
                         (data.shopDetails?.silverRatePerKg ?? 0) / 1000
                       ).toLocaleString("en-IN")}
                 </TD>
                 <TD className="text-right">
-                  {item?.makingCharge?.toLocaleString("en-IN")}
+                  {item?.makingCharge?.toLocaleString("en-IN")} (
+                  {(
+                    ((item?.makingCharge ?? 0) * 100) /
+                    (item.type === "Gold"
+                      ? (item?.purity === "18k"
+                          ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                            0.75
+                          : item?.purity === "22k"
+                            ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                              0.916
+                            : (data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                        item.weight
+                      : ((data.shopDetails?.silverRatePerKg ?? 0) / 1000) *
+                        item.weight)
+                  ).toFixed(1)}
+                  %)
                 </TD>
                 <TD className="text-right font-semibold">
                   {(
                     (item.type === "Gold"
-                      ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                      ? (item?.purity === "18k"
+                          ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                            0.75
+                          : item?.purity === "22k"
+                            ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                              0.916
+                            : (data.shopDetails?.goldRatePer10g ?? 0) / 10) *
                         item.weight
                       : ((data.shopDetails?.silverRatePerKg ?? 0) / 1000) *
                         item.weight) + (item.makingCharge ?? 0)
@@ -533,13 +576,17 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
               <tr>
                 <TD>Gold/Silver Value</TD>
                 <TD className="text-right">{fmt(metalValue)}</TD>
-                <TD className="text-center">{data?.shopDetails?.gstOnMetal}%</TD>
+                <TD className="text-center">
+                  {data?.shopDetails?.gstOnMetal}%
+                </TD>
                 <TD className="text-right">{fmt(metalGST)}</TD>
               </tr>
               <tr>
                 <TD>Making Charges</TD>
                 <TD className="text-right">{fmt(makingValue)}</TD>
-                <TD className="text-center">{data?.shopDetails?.gstOnMakingCharge}%</TD>
+                <TD className="text-center">
+                  {data?.shopDetails?.gstOnMakingCharge}%
+                </TD>
                 <TD className="text-right">{fmt(makingGST)}</TD>
               </tr>
             </tbody>
@@ -644,6 +691,9 @@ export default function GSTInvoice({ data }: { data?: InvoiceData }) {
               { label: "SGST (Split GST)", value: fmt(sgst) },
               { label: "IGST (If Applicable)", value: fmt(igst) },
               { label: "Total Tax Amt", value: fmt(totalTax), bold: true },
+              {
+                label: "Total Discounts", value: `${fmt(totalDiscount)}(${(data?.discount)}%)`,
+              },
               { label: "Invoice Value", value: fmt(invoiceValue), bold: false },
               {
                 label: "Grand Total",

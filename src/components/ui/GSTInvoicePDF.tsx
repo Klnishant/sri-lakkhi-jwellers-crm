@@ -12,7 +12,7 @@ import {
 } from "@react-pdf/renderer";
 import { toCurrency } from "to-words";
 import { InvoiceData } from "@/src/app/billing/page";
-import { Logo } from "@/src/constants/constants";
+import { hallmarkLogo, Logo } from "@/src/constants/constants";
 import { Font } from "@react-pdf/renderer";
 
 Font.register({
@@ -101,7 +101,6 @@ const s = StyleSheet.create({
   },
   headerLeft: {
     flexDirection: "row",
-    alignItems: "center",
     flex: 1,
   },
   logoCircle: {
@@ -109,11 +108,23 @@ const s = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     overflow: "hidden",
-    borderWidth: 2,
-    borderColor: C.gold,
     marginRight: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  logoImg: { width: 56, height: 56 },
+  logoImg: { width: 56, height: 56, resizeMode: "cover", borderRadius: 28, borderWidth: 2,
+    borderColor: C.gold, },
+  hallMarkLogo: {
+    width: 36,
+    height: 36,
+    resizeMode: "cover",
+  },
+  hallMarkLogoImg: {
+  width: 60,
+  height: 40,
+  marginTop: 4,
+  objectFit: "contain",
+},
   shopName: {
     fontFamily: SERIF_BOLD,
     fontSize: 30,
@@ -446,8 +457,15 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
   data.items.forEach((item) => {
     const rate =
       item.type === "Gold"
-        ? (shop?.goldRatePer10g ?? 0) / 10
-        : (shop?.silverRatePerKg ?? 0) / 1000;
+        ? (item?.purity === "18k"
+                        ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) * 0.75
+                        : item?.purity === "22k"
+                          ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                            0.916
+                          : (data.shopDetails?.goldRatePer10g ?? 0) / 10
+                      )
+        : (data.shopDetails?.silverRatePerKg ?? 0) / 1000;
+
     metalValue += rate * item.weight;
     makingValue += item.makingCharge ?? 0;
   });
@@ -473,8 +491,9 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
   }
 
   const subTotal = metalValue + makingValue;
+  const totalDiscount = ((subTotal * (data?.discount ?? 0)) / 100);
   const totalTax = cgst + sgst + igst;
-  const invoiceValue = subTotal + totalTax;
+  const invoiceValue = subTotal - totalDiscount + totalTax;
   const oldDeduction = data.oldItems?.reduce((s, i) => s + i.price, 0) ?? 0;
   const grandTotal = invoiceValue - oldDeduction;
   const grossWeight = data.items.reduce((s, i) => s + i.weight, 0);
@@ -497,9 +516,12 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
         <View style={s.headerRow}>
           {/* Left — logo + shop name */}
           <View style={s.headerLeft}>
-            <View style={s.logoCircle}>
+           <View>
+             <View style={s.logoCircle}>
               <Image src={Logo.image} style={s.logoImg} />
             </View>
+            <Image src={hallmarkLogo.image} style={s.hallMarkLogoImg} />
+           </View>
             <View>
               <Text style={s.shopName}>
               {shop?.name ?? "SRI LAKHHI JEWELLERS"}
@@ -573,7 +595,13 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
           {data.items.map((item, idx) => {
             const rate =
               item.type === "Gold"
-                ? (shop?.goldRatePer10g ?? 0) / 10
+                    ? (item?.purity === "18k"
+                        ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) * 0.75
+                        : item?.purity === "22k"
+                          ? ((data.shopDetails?.goldRatePer10g ?? 0) / 10) *
+                            0.916
+                          : (data.shopDetails?.goldRatePer10g ?? 0) / 10
+                      )
                 : (shop?.silverRatePerKg ?? 0) / 1000;
             const taxable = rate * item.weight + (item.makingCharge ?? 0);
 
@@ -790,6 +818,7 @@ export function GSTInvoicePDF({ data }: { data: InvoiceData }) {
             <TaxRow label="SGST (Split GST)" value={fmtINR(sgst)} alt />
             <TaxRow label="IGST (If Applicable)" value={fmtINR(igst)} />
             <TaxRow label="Total Tax Amt" value={fmtINR(totalTax)} bold alt />
+            <TaxRow label="Total Discounts" value={`${fmtINR(totalDiscount)}(${(data?.discount)}%)`} />
             <TaxRow label="Invoice Value" value={fmtINR(invoiceValue)} />
             <TaxRow
               label="Grand Total"

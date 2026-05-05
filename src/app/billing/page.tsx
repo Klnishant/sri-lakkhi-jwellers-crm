@@ -574,7 +574,7 @@ function BillingMainSection() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name or ID..."
-                  className="w-full outline-none text-sm placeholder:text-[#b8a898]"
+                  className="w-full outline-none text-sm placeholder:text-[#b8a898] text-[#3D2B1F]"
                   style={{ fontFamily: "'Georgia', serif" }}
                 />
               </div>
@@ -709,7 +709,9 @@ function BillingMainSection() {
                   </span>
 
                   {/* Making Charge (editable, inline, theme-safe) */}
-                  <input
+                  <div>
+                    <label htmlFor="making charge" className="text-[#9E8A7E]">Making Charge:</label>
+                    <input
                     type="number"
                     value={item.makingCharge ?? ""}
                     onChange={(e) =>
@@ -718,14 +720,14 @@ function BillingMainSection() {
                         Number(e.target.value),
                       )
                     }
-                    className="bg-transparent border-none outline-none text-right"
+                    className="bg-transparent border-none outline-none text-center"
                     style={{
                       fontFamily: "'Georgia', serif",
-                      fontSize: "12px",
                       color: "#9E8A7E", // same muted tone already used
-                      width: "60px",
+                      width: "90px",
                     }}
                   />
+                  </div>
 
                   <button
                     onClick={() => {
@@ -835,9 +837,9 @@ function BillingMainSection() {
             >
               Discounts Section
             </p>
-           <div className="flex mt-3 gap-3 w-12">
+           <div className="flex mt-3 gap-3 w-30">
              <FormInput
-                label="Discounts"
+                label="Discounts In %"
                 placeholder="10%"
                 type="number"
                 value={discount.toString() || ''}

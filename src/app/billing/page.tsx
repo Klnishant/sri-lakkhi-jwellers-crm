@@ -354,6 +354,8 @@ function BillingMainSection() {
         makingCharge: item.makingCharge || 0,
       }));
 
+      const placeOfSupply = shopDetails?.gstin?.slice(0, 2);
+
       // 🔹 Build request body (CLEAN + GST READY)
       const body = {
         customerDetails: client,
@@ -367,7 +369,7 @@ function BillingMainSection() {
           invoiceDate: invoiceDate,
 
           sellerGSTIN: shopDetails?.gstin,
-          placeOfSupply: shopDetails?.stateCode || "20",
+          placeOfSupply: placeOfSupply || "10",
           isInterState: false, // you can make dynamic later
           goldRatePer10g: shopDetails?.goldRatePer10g,
           silverRatePerKg: shopDetails?.silverRatePerKg,

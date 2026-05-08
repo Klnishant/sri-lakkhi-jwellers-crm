@@ -55,10 +55,12 @@ function DeleteConfirm({
   name,
   onConfirm,
   onCancel,
+  isdeleting,
 }: {
   name: string;
   onConfirm: () => void;
   onCancel: () => void;
+  isdeleting: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 bg-[#FADADD] border border-[#E8A0A8] rounded-lg px-3 py-2 mt-2">
@@ -73,6 +75,7 @@ function DeleteConfirm({
       </p>
       <button
         onClick={onConfirm}
+        disabled={isdeleting}
         className="px-2.5 py-1 rounded bg-[#8B2020] hover:bg-[#6B1A1A] text-white transition-colors"
         style={{
           fontFamily: "'Georgia', serif",
@@ -164,6 +167,11 @@ function MobileUserCard({
   onDeleteStart,
   onDeleteConfirm,
   onDeleteCancel,
+  isdeleting,
+  isUpdatingVerify,
+  isUpdatingRole,
+  onUpdateVerifyStart,
+  onUpdateRoleStart,
 }: {
   user: IUser;
   idx: number;
@@ -173,6 +181,11 @@ function MobileUserCard({
   onDeleteStart: () => void;
   onDeleteConfirm: () => void;
   onDeleteCancel: () => void;
+  isdeleting: boolean;
+  isUpdatingVerify: boolean;
+  isUpdatingRole: boolean;
+  onUpdateVerifyStart: () => void;
+  onUpdateRoleStart: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const role = user.role as UserRole;
@@ -262,7 +275,11 @@ function MobileUserCard({
           <div className="flex flex-wrap gap-2">
             {/* Verify / Revoke */}
             <button
-              onClick={onToggleVerified}
+              onClick={() => {
+                onUpdateVerifyStart();
+                onToggleVerified();
+              }}
+              disabled={isUpdatingVerify}
               className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-bold tracking-[0.06em] transition-all duration-200 flex-1 ${
                 user.verified
                   ? "bg-[#FFF8E7] border border-[#E8D080] text-[#7A5C00] hover:bg-[#FADADD] hover:border-[#E8A0A8] hover:text-[#7A1A1A]"
@@ -271,9 +288,15 @@ function MobileUserCard({
               style={{ fontFamily: "'Georgia', serif" }}
             >
               {user.verified ? (
-                <>
-                  <ShieldOff size={12} strokeWidth={2} /> Revoke
-                </>
+                isUpdatingVerify ? (
+                  "Revoking..."
+                ) : (
+                  <>
+                    <ShieldOff size={12} strokeWidth={2} /> Revoke
+                  </>
+                )
+              ) : isUpdatingVerify ? (
+                "Verifying..."
               ) : (
                 <>
                   <ShieldCheck size={12} strokeWidth={2} /> Verify
@@ -283,7 +306,11 @@ function MobileUserCard({
 
             {/* Change Role */}
             <button
-              onClick={onToggleRole}
+              onClick={() => {
+                onUpdateRoleStart();
+                onToggleRole();
+              }}
+              disabled={isUpdatingRole}
               className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-bold tracking-[0.06em] transition-all duration-200 flex-1 ${
                 role === "staff"
                   ? "bg-[#FFF8E7] border border-[#E8D080] text-[#7A5C00] hover:bg-[#FADADD] hover:border-[#E8A0A8] hover:text-[#7A1A1A]"
@@ -292,9 +319,15 @@ function MobileUserCard({
               style={{ fontFamily: "'Georgia', serif" }}
             >
               {role === "owner" ? (
-                <>
-                  <UserCheck size={12} strokeWidth={2} /> Make Staff
-                </>
+                isUpdatingRole ? (
+                  "Changing..."
+                ) : (
+                  <>
+                    <UserCheck size={12} strokeWidth={2} /> Make Staff
+                  </>
+                )
+              ) : isUpdatingRole ? (
+                "Changing..."
               ) : (
                 <>
                   <UserPlus size={12} strokeWidth={2} /> Make Owner
@@ -317,6 +350,7 @@ function MobileUserCard({
               name={user.name}
               onConfirm={onDeleteConfirm}
               onCancel={onDeleteCancel}
+              isdeleting={isdeleting}
             />
           )}
         </div>
@@ -335,6 +369,11 @@ export default function UserManagement() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [updateVerify, setUpdateVerify] = useState(false);
+  const [updateRole, setUpdateRole] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [updateVerifyId, setUpdateVerifyId] = useState<string | null>(null);
+  const [updateRoleId, setUpdateRoleId] = useState<string | null>(null);
   const ITEMS_PER_PAGE = 5;
 
   const { update } = useSession();
@@ -373,6 +412,7 @@ export default function UserManagement() {
   );
 
   const toggleVerified = async (id: string) => {
+    setUpdateVerify(true);
     try {
       const body = {
         ...users.find((u) => u._id.toString() === id),
@@ -392,10 +432,14 @@ export default function UserManagement() {
       );
     } catch (error: any) {
       console.error("Failed to toggle verify:", error.message);
+    } finally {
+      setUpdateVerify(false);
+      setUpdateVerifyId(null);
     }
   };
 
   const deleteUser = async (id: string) => {
+    setDeleting(true);
     try {
       const user = users.find((u) => u._id.toString() === id);
       const response = await axios.delete("/api/delete-user", { data: user });
@@ -404,10 +448,13 @@ export default function UserManagement() {
       setConfirmDeleteId(null);
     } catch (error: any) {
       console.error("Error in deleting user:", error.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
   const toggleRole = async (id: string) => {
+    setUpdateRole(true);
     try {
       const body = {
         ...users.find((u) => u._id.toString() === id),
@@ -433,6 +480,9 @@ export default function UserManagement() {
       );
     } catch (error: any) {
       console.error("Error in toggling role:", error.message);
+    } finally {
+      setUpdateRole(false);
+      setUpdateRoleId(null);
     }
   };
 
@@ -613,6 +663,11 @@ export default function UserManagement() {
                   onDeleteStart={() => setConfirmDeleteId(uid)}
                   onDeleteConfirm={() => deleteUser(uid)}
                   onDeleteCancel={() => setConfirmDeleteId(null)}
+                  isdeleting={deleting}
+                  isUpdatingVerify={updateVerifyId === uid}
+                  isUpdatingRole={updateRoleId === uid}
+                  onUpdateVerifyStart={() => setUpdateVerifyId(uid)}
+                  onUpdateRoleStart={() => setUpdateRoleId(uid)}
                 />
               );
             })}
@@ -727,7 +782,11 @@ export default function UserManagement() {
                     {/* Actions */}
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => toggleVerified(uid)}
+                        onClick={() => {
+                          setUpdateVerifyId(uid);
+                          toggleVerified(uid);
+                        }}
+                        disabled={updateVerify && updateVerifyId === uid}
                         className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-bold tracking-[0.06em] transition-all duration-200 w-24 ${
                           user.verified
                             ? "bg-[#FFF8E7] border border-[#E8D080] text-[#7A5C00] hover:bg-[#FADADD] hover:border-[#E8A0A8] hover:text-[#7A1A1A]"
@@ -736,9 +795,15 @@ export default function UserManagement() {
                         style={{ fontFamily: "'Georgia', serif" }}
                       >
                         {user.verified ? (
-                          <>
-                            <ShieldOff size={12} strokeWidth={2} /> Revoke
-                          </>
+                          updateVerify && updateVerifyId === uid ? (
+                            "Revoking..."
+                          ) : (
+                            <>
+                              <ShieldOff size={12} strokeWidth={2} /> Revoke
+                            </>
+                          )
+                        ) : updateVerify && updateVerifyId === uid ? (
+                          "Verifying..."
                         ) : (
                           <>
                             <ShieldCheck size={12} strokeWidth={2} /> Verify
@@ -758,7 +823,11 @@ export default function UserManagement() {
                     {/* Change Role */}
                     <div>
                       <button
-                        onClick={() => toggleRole(uid)}
+                        onClick={() => {
+                          setUpdateRoleId(uid);
+                          toggleRole(uid);
+                        }}
+                        disabled={updateRole && updateRoleId === uid}
                         className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-bold tracking-[0.06em] transition-all duration-200 ${
                           role === "staff"
                             ? "bg-[#FFF8E7] border border-[#E8D080] text-[#7A5C00] hover:bg-[#FADADD] hover:border-[#E8A0A8] hover:text-[#7A1A1A]"
@@ -767,9 +836,15 @@ export default function UserManagement() {
                         style={{ fontFamily: "'Georgia', serif" }}
                       >
                         {role === "owner" ? (
-                          <>
-                            <UserCheck size={12} strokeWidth={2} /> Make Staff
-                          </>
+                          updateRole && updateRoleId === uid ? (
+                            "Changing..."
+                          ) : (
+                            <>
+                              <UserCheck size={12} strokeWidth={2} /> Make Staff
+                            </>
+                          )
+                        ) : updateRole && updateRoleId === uid ? (
+                          "Changing..."
                         ) : (
                           <>
                             <UserPlus size={12} strokeWidth={2} /> Make Owner
@@ -785,6 +860,7 @@ export default function UserManagement() {
                         name={user.name}
                         onConfirm={() => deleteUser(uid)}
                         onCancel={() => setConfirmDeleteId(null)}
+                        isdeleting={deleting}
                       />
                     </div>
                   )}

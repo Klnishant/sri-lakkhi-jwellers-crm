@@ -59,12 +59,6 @@ export const authOptions: NextAuthOptions = {
         token.verified = user.verified;
       }
 
-      // 🔥 THIS PART IS KEY
-      if (trigger === "update" && session) {
-        token.verified = session.verified;
-        token.role = session.role;
-      }
-
       return token;
     },
     async session({ session, token }) {

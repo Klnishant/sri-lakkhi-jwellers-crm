@@ -15,11 +15,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error,setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const router = useRouter();
   const { toast } = useToast();
 
   const handleSignIn = async () => {
+    setSubmitting(true);
     // handle auth logic here
     try {
       if (!email || !password) {
@@ -70,6 +72,8 @@ export default function LoginPage() {
         variant: "destructive",
       });
       setError(error.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -288,6 +292,7 @@ export default function LoginPage() {
           {/* Sign In Button */}
           <button
             onClick={handleSignIn}
+            disabled={submitting}
             className="w-full bg-[#6B1A1A] hover:bg-[#521414] text-white py-4 rounded-md tracking-[0.18em] uppercase transition-colors duration-200"
             style={{
               fontFamily: "'Georgia', serif",
@@ -295,7 +300,9 @@ export default function LoginPage() {
               fontWeight: 600,
             }}
           >
-            Sign In
+            {
+              submitting ? "Signing In..." : "Sign In"
+            }
           </button>
           {/* Sign up link */}
           <p

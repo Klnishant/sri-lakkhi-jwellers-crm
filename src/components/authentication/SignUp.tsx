@@ -25,6 +25,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<FieldError>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const set = (key: keyof SignupForm, val: string) => {
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -50,6 +51,7 @@ export default function SignupPage() {
   const handleSubmit = async() => {
     if (validate()) {
       // handle signup logic here
+      setSubmitting(true);
      try {
             const data = {
                 name: form.name,
@@ -58,12 +60,14 @@ export default function SignupPage() {
             }
             const response = await axios.post(`/api/sign-up`,data);
 
-            toast(
-                {
-                    title: 'success',
-                    description: response?.data.message,
-                }
-            );
+            if (response.data.success) {
+                toast({
+                    title: 'sign-up successful',
+                    description: response.data.message,
+                    variant: 'default',
+                });
+                router.replace('/sign-in');
+            }
 
         } catch (error) {
             
@@ -79,6 +83,8 @@ export default function SignupPage() {
                     variant: 'destructive',
                 },
             );
+        } finally {
+            setSubmitting(false);
         }
     }
   };
@@ -380,10 +386,13 @@ export default function SignupPage() {
           {/* Submit */}
           <button
             onClick={handleSubmit}
+            disabled={submitting}
             className="w-full mt-8 bg-[#6B1A1A] hover:bg-[#521414] text-white py-4 rounded-md tracking-[0.18em] uppercase transition-colors duration-200"
             style={{ fontFamily: "'Georgia', serif", fontSize: "13px", fontWeight: 600 }}
           >
-            Create Account
+            {
+              submitting ? "Signing Up..." : "Sign Up"
+            }
           </button>
 
           {/* Sign in link */}

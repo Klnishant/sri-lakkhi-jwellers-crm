@@ -12,9 +12,8 @@ import {
   Plus,
 } from "lucide-react";
 import axios from "axios";
-import { ICustomer } from "@/src/models/Customer";
+import type { ICustomer, IPayment } from "@/src/models/Customer";
 
-// ── Types ──────────────────────────────────────────────
 type CustomerForm = {
   name: string;
   phone: string;
@@ -25,6 +24,7 @@ type CustomerForm = {
   advanceAmount: string;
 };
 
+type OpeningPayment = Omit<IPayment, "date">;
 type FieldError = Partial<Record<keyof CustomerForm, string>>;
 
 const EMPTY_FORM: CustomerForm = {
@@ -37,7 +37,43 @@ const EMPTY_FORM: CustomerForm = {
   advanceAmount: "",
 };
 
-// ── Sub-components ─────────────────────────────────────
+function getOpeningLedger(form: CustomerForm) {
+  const dueAmount = Number(form.dueAmount) || 0;
+  const advanceAmount = Number(form.advanceAmount) || 0;
+  const payments: OpeningPayment[] = [];
+
+  if (dueAmount > 0) {
+    payments.push({
+      amount: dueAmount,
+      type: "debit",
+      reason: "purchase",
+      mode: "cash",
+      note: "Opening due",
+      billId: "",
+    });
+  }
+
+  if (advanceAmount > 0) {
+    payments.push({
+      amount: advanceAmount,
+      type: "credit",
+      reason: "advance",
+      mode: "cash",
+      note: "Opening advance",
+      billId: "",
+    });
+  }
+
+  const balance = advanceAmount - dueAmount;
+
+  return {
+    payments,
+    dueAmount: balance < 0 ? Math.abs(balance) : 0,
+    advanceAmount: balance > 0 ? balance : 0,
+    netBalance: dueAmount - advanceAmount,
+  };
+}
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 mb-5">
@@ -124,7 +160,7 @@ function InputField({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="flex-1 bg-transparent text-[#3D2B1F] placeholder-[#C8B8A8] text-[13px] focus:outline-none"
+        className="flex-1 bg-transparent text-[#3D2B1F] placeholder-[#C8B8A8] text-[13px] focus:outline-none min-w-0"
         style={{ fontFamily: "'Georgia', serif" }}
         min={min}
       />
@@ -159,14 +195,13 @@ function TextAreaField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
-        className="flex-1 bg-transparent text-[#3D2B1F] placeholder-[#C8B8A8] text-[13px] focus:outline-none resize-none"
+        className="flex-1 bg-transparent text-[#3D2B1F] placeholder-[#C8B8A8] text-[13px] focus:outline-none resize-none min-w-0"
         style={{ fontFamily: "'Georgia', serif", lineHeight: "1.65" }}
       />
     </div>
   );
 }
 
-// ── Main Modal ─────────────────────────────────────────
 interface AddCustomerModalProps {
   onClose?: () => void;
   onSave?: (data: ICustomer) => void;
@@ -178,9 +213,14 @@ export default function AddCustomerModal({
 }: AddCustomerModalProps) {
   const [form, setForm] = useState<CustomerForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<FieldError>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error">(
+    "success"
+  );
 
-  // Lock body scroll
+  const openingLedger = getOpeningLedger(form);
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -191,7 +231,7 @@ export default function AddCustomerModal({
   const set = (key: keyof CustomerForm, val: string) => {
     setForm((prev) => ({ ...prev, [key]: val }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
-    setSubmitted(false);
+    setMessage("");
   };
 
   const validate = (): boolean => {
@@ -206,45 +246,70 @@ export default function AddCustomerModal({
     }
 
     if (!form.adress.trim()) e.adress = "Address is required.";
+
     if (
       form.dueAmount &&
       (isNaN(Number(form.dueAmount)) || Number(form.dueAmount) < 0)
-    )
+    ) {
       e.dueAmount = "Enter a valid due amount.";
+    }
 
     if (
       form.advanceAmount &&
       (isNaN(Number(form.advanceAmount)) || Number(form.advanceAmount) < 0)
-    )
+    ) {
       e.advanceAmount = "Enter a valid advance amount.";
+    }
 
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = async() => {
-    if (validate()) {
-      setSubmitted(true);
-      try {
-        const response = await axios.post(`/api/add-customer`, form);
-        if (!response.data.success) throw new Error(response.data.message);
-        onSave?.(response.data.data);
-      } catch (error: any) {
-        console.error("Error saving product:", error.message);
-      } finally {
-        setSubmitted(false);
+  const handleSave = async () => {
+    if (!validate()) return;
+
+    setSaving(true);
+    setMessage("");
+    setMessageType("success");
+
+    try {
+      const payload = {
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        adress: form.adress.trim(),
+        dob: form.dob || undefined,
+        anniversary: form.anniversary || undefined,
+        payments: openingLedger.payments,
+        dueAmount: openingLedger.dueAmount,
+        advanceAmount: openingLedger.advanceAmount,
+      };
+
+      const response = await axios.post("/api/add-customer", payload);
+
+      if (!response.data.success) {
+        throw new Error(response.data.message);
       }
+
+      setMessageType("success");
+      setMessage(response.data.message || "Customer added successfully.");
+      onSave?.(response.data.data);
+    } catch (error: any) {
+      setMessageType("error");
+      setMessage(error.message || "Failed to add customer.");
+      console.error("Error saving customer:", error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleReset = () => {
     setForm(EMPTY_FORM);
     setErrors({});
-    setSubmitted(false);
+    setMessage("");
+    setMessageType("success");
   };
 
   return (
-    /* ── Backdrop ── */
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
       style={{
@@ -253,17 +318,13 @@ export default function AddCustomerModal({
       }}
       onClick={(e) => e.target === e.currentTarget && onClose?.()}
     >
-      {/* ── Modal Card ── */}
       <div
         className="relative w-full max-w-[620px] max-h-[92vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
         style={{ background: "#FFFFFF" }}
       >
-        {/* Gold-maroon top accent */}
         <div className="h-1 flex-shrink-0 bg-gradient-to-r from-[#8B2020] via-[#C9A84C] to-[#8B2020]" />
 
-        {/* ── Modal Header ── */}
         <div className="flex-shrink-0 bg-[#FDF0F0] px-8 pt-6 pb-5 relative">
-          {/* Close button */}
           <button
             onClick={onClose}
             className="absolute top-4 right-4 text-[#9E8A7E] hover:text-[#5C3D2E] transition-colors duration-200"
@@ -272,7 +333,6 @@ export default function AddCustomerModal({
             <X size={19} strokeWidth={1.8} />
           </button>
 
-          {/* Eyebrow */}
           <p
             className="text-[#8B6914] tracking-[0.18em] uppercase mb-1.5"
             style={{
@@ -284,7 +344,6 @@ export default function AddCustomerModal({
             Customer Management
           </p>
 
-          {/* Title */}
           <h2
             className="text-[#2C1A0E]"
             style={{
@@ -296,19 +355,13 @@ export default function AddCustomerModal({
             Add New Customer
           </h2>
 
-          {/* Gold underline rule */}
           <div className="mt-4 w-10 h-[2px] rounded-full bg-[#8B6914]" />
         </div>
 
-        {/* ── Scrollable Form Body ── */}
         <div className="flex-1 overflow-y-auto px-8 py-7 flex flex-col gap-7 bg-white">
-
-          {/* Section 1 — Personal Information */}
           <div>
             <SectionTitle>Personal Information</SectionTitle>
             <div className="flex flex-col gap-4">
-
-              {/* Name */}
               <FieldWrapper label="Full Name" required error={errors.name}>
                 <InputField
                   icon={<User size={15} strokeWidth={1.6} />}
@@ -319,7 +372,6 @@ export default function AddCustomerModal({
                 />
               </FieldWrapper>
 
-              {/* Phone */}
               <FieldWrapper label="Phone Number" required error={errors.phone}>
                 <InputField
                   icon={<Phone size={15} strokeWidth={1.6} />}
@@ -331,7 +383,6 @@ export default function AddCustomerModal({
                 />
               </FieldWrapper>
 
-              {/* Address */}
               <FieldWrapper label="Address" required error={errors.adress}>
                 <TextAreaField
                   icon={<MapPin size={15} strokeWidth={1.6} />}
@@ -344,12 +395,9 @@ export default function AddCustomerModal({
             </div>
           </div>
 
-          {/* Section 2 — Important Dates */}
           <div>
             <SectionTitle>Important Dates</SectionTitle>
-            <div className="grid grid-cols-2 gap-4">
-
-              {/* Date of Birth */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FieldWrapper label="Date of Birth">
                 <InputField
                   icon={<Calendar size={15} strokeWidth={1.6} />}
@@ -361,7 +409,6 @@ export default function AddCustomerModal({
                 />
               </FieldWrapper>
 
-              {/* Anniversary */}
               <FieldWrapper label="Anniversary" error={errors.anniversary}>
                 <InputField
                   icon={<Heart size={15} strokeWidth={1.6} />}
@@ -375,12 +422,9 @@ export default function AddCustomerModal({
             </div>
           </div>
 
-          {/* Section 3 — Financial Details */}
           <div>
-            <SectionTitle>Financial Details</SectionTitle>
-            <div className="grid grid-cols-2 gap-4">
-
-              {/* Due Amount */}
+            <SectionTitle>Opening Balance</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FieldWrapper label="Due Amount (₹)" error={errors.dueAmount}>
                 <InputField
                   icon={<IndianRupee size={15} strokeWidth={1.6} />}
@@ -393,7 +437,6 @@ export default function AddCustomerModal({
                 />
               </FieldWrapper>
 
-              {/* Advance Amount */}
               <FieldWrapper
                 label="Advance Amount (₹)"
                 error={errors.advanceAmount}
@@ -410,10 +453,9 @@ export default function AddCustomerModal({
               </FieldWrapper>
             </div>
 
-            {/* Financial summary preview */}
             {(form.dueAmount || form.advanceAmount) && (
               <div
-                className="mt-4 flex items-center justify-between px-4 py-3 rounded-lg"
+                className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4 py-3 rounded-lg"
                 style={{
                   background:
                     "linear-gradient(135deg, #FDF3DC 0%, #F5E8B0 100%)",
@@ -432,92 +474,90 @@ export default function AddCustomerModal({
                     Net Balance
                   </p>
                   <p
-                    className="text-[#4A3000]"
+                    className={
+                      openingLedger.netBalance > 0
+                        ? "text-[#8B2020]"
+                        : "text-[#1A6B3A]"
+                    }
                     style={{
                       fontFamily: "'Georgia', serif",
                       fontSize: "15px",
                       fontWeight: 700,
                     }}
                   >
-                    ₹
-                    {(
-                      (Number(form.dueAmount) || 0) -
-                      (Number(form.advanceAmount) || 0)
-                    ).toLocaleString("en-IN")}
+                    ₹{Math.abs(openingLedger.netBalance).toLocaleString("en-IN")}
                   </p>
                 </div>
                 <div className="flex gap-6">
-                  {form.dueAmount && (
-                    <div className="text-right">
-                      <p
-                        className="text-[#9E8A7E] tracking-[0.08em] uppercase"
-                        style={{
-                          fontFamily: "'Georgia', serif",
-                          fontSize: "9px",
-                        }}
-                      >
-                        Due
-                      </p>
-                      <p
-                        className="text-[#8B2020]"
-                        style={{
-                          fontFamily: "'Georgia', serif",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                        }}
-                      >
-                        ₹
-                        {Number(form.dueAmount).toLocaleString("en-IN")}
-                      </p>
-                    </div>
-                  )}
-                  {form.advanceAmount && (
-                    <div className="text-right">
-                      <p
-                        className="text-[#9E8A7E] tracking-[0.08em] uppercase"
-                        style={{
-                          fontFamily: "'Georgia', serif",
-                          fontSize: "9px",
-                        }}
-                      >
-                        Advance
-                      </p>
-                      <p
-                        className="text-[#1A6B3A]"
-                        style={{
-                          fontFamily: "'Georgia', serif",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                        }}
-                      >
-                        ₹
-                        {Number(form.advanceAmount).toLocaleString("en-IN")}
-                      </p>
-                    </div>
-                  )}
+                  <div className="text-right">
+                    <p
+                      className="text-[#9E8A7E] tracking-[0.08em] uppercase"
+                      style={{ fontFamily: "'Georgia', serif", fontSize: "9px" }}
+                    >
+                      Final Due
+                    </p>
+                    <p
+                      className="text-[#8B2020]"
+                      style={{
+                        fontFamily: "'Georgia', serif",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ₹{openingLedger.dueAmount.toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p
+                      className="text-[#9E8A7E] tracking-[0.08em] uppercase"
+                      style={{ fontFamily: "'Georgia', serif", fontSize: "9px" }}
+                    >
+                      Final Advance
+                    </p>
+                    <p
+                      className="text-[#1A6B3A]"
+                      style={{
+                        fontFamily: "'Georgia', serif",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ₹{openingLedger.advanceAmount.toLocaleString("en-IN")}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Success Banner */}
-          {submitted && (
-            <div className="bg-[#F0FBF4] border border-[#4CAF50]/30 rounded-md px-4 py-3">
+          {message && (
+            <div
+              className="rounded-md px-4 py-3"
+              style={{
+                background: messageType === "success" ? "#F0FBF4" : "#FFF0F1",
+                border:
+                  messageType === "success"
+                    ? "1px solid #4CAF504D"
+                    : "1px solid #C0392B4D",
+              }}
+            >
               <p
-                className="text-[#2E7D32]"
+                className={
+                  messageType === "success" ? "text-[#2E7D32]" : "text-[#8B2020]"
+                }
                 style={{ fontFamily: "'Georgia', serif", fontSize: "13px" }}
               >
-                ✓ Customer added successfully to your records.
+                {message}
               </p>
             </div>
           )}
         </div>
 
-        {/* ── Sticky Footer ── */}
         <div className="flex-shrink-0 bg-[#FAF6F1] border-t border-[#E8DDD4] px-8 py-5 flex items-center justify-between">
           <button
             onClick={handleReset}
-            className="text-[#9E8A7E] hover:text-[#5C3D2E] tracking-[0.12em] uppercase transition-colors duration-200"
+            disabled={saving}
+            className="text-[#9E8A7E] hover:text-[#5C3D2E] disabled:opacity-50 tracking-[0.12em] uppercase transition-colors duration-200"
             style={{
               fontFamily: "'Georgia', serif",
               fontSize: "11px",
@@ -530,7 +570,8 @@ export default function AddCustomerModal({
           <div className="flex items-center gap-4">
             <button
               onClick={onClose}
-              className="text-[#9E8A7E] hover:text-[#5C3D2E] tracking-[0.12em] uppercase transition-colors duration-200 px-2"
+              disabled={saving}
+              className="text-[#9E8A7E] hover:text-[#5C3D2E] disabled:opacity-50 tracking-[0.12em] uppercase transition-colors duration-200 px-2"
               style={{
                 fontFamily: "'Georgia', serif",
                 fontSize: "11px",
@@ -541,7 +582,8 @@ export default function AddCustomerModal({
             </button>
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 bg-[#6B1A1A] hover:bg-[#521414] text-white px-8 py-3.5 rounded-md tracking-[0.16em] uppercase transition-colors duration-200"
+              disabled={saving}
+              className="flex items-center gap-2 bg-[#6B1A1A] hover:bg-[#521414] disabled:opacity-60 disabled:cursor-not-allowed text-white px-8 py-3.5 rounded-md tracking-[0.16em] uppercase transition-colors duration-200"
               style={{
                 fontFamily: "'Georgia', serif",
                 fontSize: "12px",
@@ -549,7 +591,7 @@ export default function AddCustomerModal({
               }}
             >
               <Plus size={14} strokeWidth={2.5} />
-              Add Customer
+              {saving ? "Saving..." : "Add Customer"}
             </button>
           </div>
         </div>

@@ -233,7 +233,7 @@ export async function POST(req: Request) {
       discount,
 
       sellerGSTIN,
-      placeOfSupply,
+      placeOfSupply : placeOfSupply ?? "10",
       isInterState,
 
       invoiceNumber,
